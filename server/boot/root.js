@@ -10,5 +10,21 @@ module.exports = function (server) {
     });
   });
 
+  router.post('/register', function (req, res, next) {
+    server.models.MyUser.create({
+      email: req.body.email,
+      password: req.body.password
+    }, function (err, user) {
+      if (err) {
+        res.status('400').send(err);
+      }
+      else {
+        res.render('home', {
+          'message': 'user created'
+        });
+      }
+    });
+  });
+
   server.use(router);
 };

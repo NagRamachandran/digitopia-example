@@ -22,14 +22,13 @@ module.exports = function (MyUser) {
 					signed: req.signedCookies ? true : false,
 					maxAge: 1000 * accessToken.ttl
 				});
-				res.redirect('/');
+				return res.redirect('/');
 			}
 		}
 		return next();
 	});
 
 	MyUser.upload = function (id, property, ctx, cb) {
-		console.log(ctx);
 		var loopbackContext = loopback.getCurrentContext();
 		var currentUser = loopbackContext.get('currentUser');
 		var roles = loopbackContext.get('currentUserRoles');

@@ -14,10 +14,12 @@
     ]
   },
   "Upload": {
-    "dataSource": "db"
+    "dataSource": "db",
+    "public": false
   },
   "User": {
-    "dataSource": "db"
+    "dataSource": "db",
+    "public": false
   },
   "AccessToken": {
     "dataSource": "db",

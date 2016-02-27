@@ -1,9 +1,22 @@
+if message
+	strong= message
+	
 if user
 	p.
 		Logged in as #{user.email}
 		
 	a(href="/upload") Upload a file
 else
+	h3.
+		Register
+	form(action="/register" method="POST")
+		input(type="text" name="email" placeholder="Email address")
+		input(type="password" name="password" placeholder="Password")
+		input(type="submit")
+	p.
+		- or -
+	h3.
+		Login
 	form(action="/api/MyUsers/login" method="POST")
 		input(type="text" name="email" placeholder="Email address")
 		input(type="password" name="password" placeholder="Password")

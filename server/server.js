@@ -12,10 +12,13 @@ var ds = loopback.createDataSource({
   connector: require('loopback-component-storage'),
   provider: 'amazon',
   key: process.env.AWS_S3_KEY,
-  keyId: process.env.AWS_S3_KEY_ID
+  keyId: process.env.AWS_S3_KEY_ID,
 });
 var container = ds.createModel('container');
-app.model(container);
+app.model(container, {
+  'dataSource': null,
+  'public': false
+});
 
 // use context middleware
 app.use(loopback.context());
