@@ -42,6 +42,12 @@ app.use(loopback.token({
 var getCurrentUserApi = require('./middleware/context-currentUserApi')();
 app.use(getCurrentUserApi);
 
+// use basic-auth for development environment
+if (app.get('env') === 'development') {
+  var basicAuth = require('./middleware/basicAuth')();
+  app.use(basicAuth);
+}
+
 app.start = function () {
   // start the web server
   return app.listen(function () {
