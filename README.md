@@ -1,4 +1,4 @@
-# My Application
+# Digitopia
 
 This is an example Strongloop app Scaffolding
 
