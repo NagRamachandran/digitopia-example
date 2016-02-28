@@ -1,6 +1,7 @@
 var loopback = require('loopback');
 var server = require('../../server/server');
 var uploadable = require('../../server/lib/uploadable');
+var async = require('async');
 
 module.exports = function (MyUser) {
 
@@ -28,6 +29,20 @@ module.exports = function (MyUser) {
 				foreignKey: 'uploadableId',
 				discriminator: 'uploadableType'
 			}
+		});
+	});
+
+	// cleanup the uploads before destroying user
+	MyUser.observe('before delete', function (ctx, doneObserving) {
+		MyUser.find({
+			where: ctx.where,
+			include: ['uploads']
+		}, function (err, users) {
+			async.map(users, function (user, cb) {
+				user.uploads.destroyAll(cb);
+			}, function (err, obj) {
+				doneObserving(err);
+			});
 		});
 	});
 

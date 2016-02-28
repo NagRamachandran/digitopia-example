@@ -1,5 +1,7 @@
 var async = require('async');
 
+var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
+
 module.exports = function (Upload) {
 	Upload.observe('before delete', function (ctx, doneObserving) {
 		var File = ctx.Model;
@@ -7,7 +9,7 @@ module.exports = function (Upload) {
 			where: ctx.where
 		}, function (err, files) {
 			async.map(files, function (file, doneDeletingS3) {
-				Upload.app.models.Container.removeFile('tendr-mediapolis', file.name, function (err) {
+				Upload.app.models.Container.removeFile(bucket, file.name, function (err) {
 					doneDeletingS3(err);
 				});
 			}, function (err, obj) {
