@@ -5,12 +5,11 @@ var loopback = require('loopback');
 var server = require('../server');
 
 // where uploads get saved
-var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'uploads';
+var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
 
 module.exports = function uploadable(model, instance, property, ctx, next) {
 	var loopbackContext = loopback.getCurrentContext();
 	var currentUser = loopbackContext.get('currentUser');
-	var roles = loopbackContext.get('currentUserRoles');
 	var req = ctx.req;
 	var res = ctx.res;
 	var params = req.query.id ? req.query : req.body;
@@ -97,7 +96,7 @@ module.exports = function uploadable(model, instance, property, ctx, next) {
 	function handleUpload(req, doneWithUpload) {
 		var loopbackContext = loopback.getCurrentContext();
 
-		// copying url to s3
+		// if we have a url copy the file at the url to s3
 		if (params.url) {
 			var options = {};
 			var parts = params.url.split('.');
@@ -130,11 +129,12 @@ module.exports = function uploadable(model, instance, property, ctx, next) {
 			}).pipe(s3Upload);
 		}
 		else {
-			// uploading multipart payload to s3
 
-			// compute name for s3 file
+			// receive multipart file upload payload and save to s3
+
 			var options = {};
 
+			// use a uuid for the filename on s3 using the original extension
 			options.getFilename = function (fileInfo, req) {
 				fileInfo.uploadedFileName = fileInfo.name;
 				var origFilename = fileInfo.name;
@@ -148,8 +148,8 @@ module.exports = function uploadable(model, instance, property, ctx, next) {
 			req.params.container = bucket;
 			server.models.Container.upload(req, res, options, function (err, fileObj) {
 				var file;
-				if (!err && fileObj && fileObj.files && fileObj.files.uploadedFiles) {
-					file = fileObj.files.uploadedFiles[0];
+				if (!err && fileObj && fileObj.files && fileObj.files.uploadedFile) {
+					file = fileObj.files.uploadedFile[0];
 				}
 				doneWithUpload(err, file);
 			});

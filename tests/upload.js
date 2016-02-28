@@ -52,7 +52,7 @@ describe('upload', function () {
 	it('user 1 should NOT be able to upload image to self not logged in', function (done) {
 		var url = 'http://localhost:3000/api/MyUsers/me/upload/photo';
 		persist
-			.post(url).attach('uploadedFiles', file)
+			.post(url).attach('uploadedFile', file)
 			.end(function (err, res) {
 				expect(res.status).to.be(401);
 				done();
@@ -92,7 +92,7 @@ describe('upload', function () {
 	it('should NOT be able to upload photo to non existant user', function (done) {
 		var url = 'http://localhost:3000/api/MyUsers/999999999/upload/photo';
 		persist
-			.post(url).attach('uploadedFiles', file)
+			.post(url).attach('uploadedFile', file)
 			.end(function (err, res) {
 				expect(res.status).to.be(401);
 				done();
@@ -102,7 +102,7 @@ describe('upload', function () {
 	it('user 1 should NOT be able to upload profile image to user 2', function (done) {
 		var url = 'http://localhost:3000/api/MyUsers/' + token2.userId + '/upload/photo';
 		persist
-			.post(url).attach('uploadedFiles', file)
+			.post(url).attach('uploadedFile', file)
 			.end(function (err, res) {
 				expect(res.status).to.be(401);
 				done();
@@ -112,7 +112,7 @@ describe('upload', function () {
 	it('user 1 should be able to upload image to self', function (done) {
 		var url = 'http://localhost:3000/api/MyUsers/me/upload/photo';
 		persist
-			.post(url).attach('uploadedFiles', file)
+			.post(url).attach('uploadedFile', file)
 			.end(function (err, res) {
 				expect(err).to.be(null);
 				expect(res.status).to.be(200);

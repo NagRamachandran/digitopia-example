@@ -1,13 +1,19 @@
 var getCurrentUser = require('../middleware/context-currentUser');
+var ensureLoggedIn = require('../middleware/context-ensureLoggedIn');
+
 module.exports = function (server) {
   var router = server.loopback.Router();
 
   router.get('/', getCurrentUser(), function (req, res, next) {
     var ctx = server.loopback.getCurrentContext();
     var currentUser = ctx.get('currentUser');
-    res.render('home', {
+    res.render('pages/home', {
       'user': currentUser
     });
+  });
+
+  router.get('/register', function (req, res, next) {
+    res.render('pages/register');
   });
 
   router.post('/register', function (req, res, next) {
@@ -19,11 +25,13 @@ module.exports = function (server) {
         res.status('400').send(err);
       }
       else {
-        res.render('home', {
-          'message': 'user created'
-        });
+        res.redirect('/');
       }
     });
+  });
+
+  router.get('/upload', getCurrentUser(), ensureLoggedIn(), function (req, res, next) {
+    res.render('pages/upload');
   });
 
   server.use(router);

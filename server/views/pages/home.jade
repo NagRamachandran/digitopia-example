@@ -1,0 +1,36 @@
+extends ../wrapper
+
+block seo
+	title.
+		Home
+
+block content
+	if message
+		strong= message
+		
+	if user
+		p.
+			Logged in as #{user.email}
+		
+		ul
+			li
+				a(href="/upload") Upload a file
+			li
+				form(action="/api/MyUsers/logout" method="POST")
+					button.
+						Log Out
+		
+	else
+		h3.
+			Login
+				
+		form(action="/api/MyUsers/login" method="POST")
+			input(type="text" name="email" placeholder="Email address")
+			input(type="password" name="password" placeholder="Password")
+			input(type="submit")
+				
+		| - or -
+		
+		h3
+			a(href="/register").
+				Register

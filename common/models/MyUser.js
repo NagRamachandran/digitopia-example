@@ -3,16 +3,8 @@ var server = require('../../server/server');
 var uploadable = require('../../server/lib/uploadable');
 
 module.exports = function (MyUser) {
-	MyUser.on('attached', function () {
-		MyUser.hasMany(server.models.Upload, {
-			as: 'uploads',
-			'polymorphic': {
-				foreignKey: 'uploadableId',
-				discriminator: 'uploadableType'
-			}
-		});
-	});
 
+	// on login set access_token cookie with same ttl as loopback's accessToken
 	MyUser.afterRemote('login', function setLoginCookie(context, accessToken, next) {
 		var res = context.res;
 		var req = context.req;
@@ -28,6 +20,18 @@ module.exports = function (MyUser) {
 		return next();
 	});
 
+	// define polymorphic hasMany relationship from MyUser to Upload
+	MyUser.on('attached', function () {
+		MyUser.hasMany(server.models.Upload, {
+			as: 'uploads',
+			'polymorphic': {
+				foreignKey: 'uploadableId',
+				discriminator: 'uploadableType'
+			}
+		});
+	});
+
+	// upload a file and store metadata in an Upload instance for MyUser
 	MyUser.upload = function (id, property, ctx, cb) {
 		var loopbackContext = loopback.getCurrentContext();
 		var currentUser = loopbackContext.get('currentUser');
@@ -37,6 +41,11 @@ module.exports = function (MyUser) {
 		});
 	};
 
+	// POST /api/MyUsers/me/upload/photo
+	// requires
+	// 	req.body.url - url to copy file from
+	//  - or -
+	//  req.body.uploadedFile - multipart file upload payload
 	MyUser.remoteMethod(
 		'upload', {
 			accepts: [{

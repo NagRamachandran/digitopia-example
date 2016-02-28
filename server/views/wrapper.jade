@@ -1,0 +1,31 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="utf-8")
+    meta(http-equiv="X-UA-Compatible" content="IE=edge")
+    meta(http-equiv="Content-Type" content="text/html; charset=UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no")
+    meta(name="apple-mobile-web-app-capable" content="yes")
+    meta(name="apple-mobile-web-app-status-bar-style" content="black-translucent")
+    meta(name="mobile-web-app-capable" content="yes")
+    
+    block seo
+
+    if env === 'production'
+      link(rel='stylesheet' href="/dist/css/DigitopiaExamples.min.css")
+    else 
+      link(rel='stylesheet' href="/dist/css/DigitopiaExamples.css")
+
+    block css
+      
+  body#document-body
+
+    #content.container
+      block content
+
+    block controller
+
+    if env === 'production'
+      script(src="/dist/js/DigitopiaExamples.min.js")
+    else
+      script(src="/dist/js/DigitopiaExamples.js")

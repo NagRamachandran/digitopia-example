@@ -1,13 +1,16 @@
 var loopback = require('loopback');
 var boot = require('loopback-boot');
-
 var app = module.exports = loopback();
 
+// use jade templating language
 app.set('views', 'server/views');
 app.set('view engine', 'jade');
 app.locals.pretty = true;
+
+// expose the running environment name to jade
 app.locals.env = app.get('env');
 
+// setup component storage for s3
 var ds = loopback.createDataSource({
   connector: require('loopback-component-storage'),
   provider: 'amazon',
@@ -20,12 +23,12 @@ app.model(container, {
   'public': false
 });
 
-// use context middleware
+// use loopback.context on all routes
 app.use(loopback.context());
 
-// use loopback token middleware
-// setup gear for authentication using cookies (access_token)
-// for web pages and api
+// use loopback.token middleware on all routes
+// setup gear for authentication using cookie (access_token)
+// Note: requires cookie-parser (defined in middleware.json)
 app.use(loopback.token({
   model: app.models.accessToken,
   currentUserLiteral: 'me',
@@ -35,6 +38,7 @@ app.use(loopback.token({
   params: ['access_token']
 }));
 
+// put currentUser in loopback.context on /api routes
 var getCurrentUserApi = require('./middleware/context-currentUserApi')();
 app.use(getCurrentUserApi);
 
