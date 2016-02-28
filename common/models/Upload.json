@@ -7,10 +7,12 @@
   },
   "properties": {
     "property": {
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "name": {
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "type": {
       "type": "string"
