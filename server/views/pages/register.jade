@@ -7,7 +7,7 @@ block seo
 block content
 	h3.
 		Register
-	form(action="/register" method="POST")
+	form.form.form-inline(action="/register" method="POST")
 		input(type="text" name="email" placeholder="Email address")
 		input(type="password" name="password" placeholder="Password")
-		input(type="submit")
+		input.btn.btn-primary(type="submit")
