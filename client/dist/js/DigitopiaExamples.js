@@ -12192,4 +12192,4775 @@ if (typeof jQuery === 'undefined') {
   })
 
 }(jQuery);
+;// digitopia/controller.js - digitopia.js responsive element controller
+// status: api stable
+// version: 0.9
+
+/*
+    Copyright (C) 2013 Michael Rhodes
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+// this should be attached to the document body as follows
+//
+// options = {
+//		'geometry': { 'enabled' : true, 'widths': [], 'classes': [], cookieDomain: '' }
+// }
+// $(body).digitopiaController(options);
+
+var gResponsiveUniqueId = 0;
+var gResponsiveFlashEvents = true;
+
+function GetJQueryPlugin(classname,obj) {
+	return function(options){
+		return this.each(function(){
+			var element = $(this);
+			if(!this.id) { // self assigned id (so $.off works when events are namespaced by id)
+				this.id = 'DiGiToPiA-' + ++gResponsiveUniqueId;
+			}
+			if(!element.data(classname)) {
+				element.addClass('DigitopiaInstance');
+				try {
+					var instance =  new obj(this,options);
+					element.data(classname, instance);
+					if(instance.stop) {
+						element.on('DigitopiaStop', function(event) {
+							event.stopPropagation();
+							if(event.target === this) {
+								instance.stop();
+							}
+						});
+					}
+					if(instance.start) {
+						window.setTimeout(function() {
+							instance.start();
+							$('.DigitopiaInstance').trigger('DigitopiaNewInstance',element);
+						},0);
+					}
+				}
+				catch(err) {
+					alert('Could not initialize element:' + this.id + ' jsclass:' + classname + ' error:' + err);
+				}
+			}
+		})
+	}
+}
+
+(function($){
+	var digitopiaController = function(element, options){
+		this.element = $(element);
+
+		var self = this;
+
+		this.config = $.extend({
+			geometry: undefined,
+			lazy: undefined,
+			ajax: undefined,
+			hijax: undefined,
+			parallax: undefined,
+			coverResize: false
+		}, options || {});
+
+		this.start = function() {
+			if(this.config.geometry && this.config.geometry.enabled) {
+				this.config.geometry.controller = this;
+				setTimeout(function() {
+					self.element.digitopiaGeometry(self.config.geometry);
+				},0);
+			}
+			if(this.config.hijax && this.config.hijax.enabled) {
+				this.config.hijax.controller = this;
+				setTimeout(function() {
+					self.element.digitopiaHijax(self.config.hijax);
+				},0);
+			}
+
+			this.element.lazyInstantiate();
+
+			this.instantiateElements();
+
+			$(window).unload(function() {
+				$('.DigitopiaInstance').trigger('DigitopiaStart');
+			});
+
+			self.scrollTimer = undefined;
+
+			$(window).scroll(function() {
+				if(!self.scrollTimer) {
+					self.scrollTimer = setTimeout(function() {
+						self.scrollTimer = undefined;
+						$('.DigitopiaInstance').trigger('DigitopiaDidScroll');
+					}, 250);
+				}
+			});
+
+			self.resizeTimer = undefined;
+
+			$('body').outerWidth($(window).innerWidth());
+
+			$(window).resize(function() {
+				if(self.resizeTimer) {
+			    	clearTimeout(self.resizeTimer);
+			    }
+			    else {
+			    	//console.log('start ',$(window).width());
+    				if(self.config.coverResize) {
+			    		$('body').css({'opacity': 0.3});
+			    	}
+			    }
+    			self.resizeTimer = setTimeout(function() {
+			    	//console.log('end ',$(window).width());
+			    	$('body').outerWidth($(window).innerWidth());
+    				self.resizeTimer = undefined;
+    				$('.DigitopiaInstance').trigger('DigitopiaDidResize');
+    				if(self.config.coverResize) {
+    					$('body').css({'opacity': 1});
+    				}
+    			}, 100);
+			});
+
+		};
+
+		this.stop = function() {
+		};
+
+		this.instantiateElements = function() {
+			var didInstantiate = false;
+			$("*[data-jsclass]").each( function () {
+				var classnames = $(this).data('jsclass').split(',');
+				for(var i = 0; i < classnames.length; i++) {
+					var classname = classnames[i];
+					if(!$(this).data(classname)) {
+						didInstantiate = true;
+						var handler = null;
+						try {
+							if($(this)[classname]) { // try jquery plugin method first
+								$(this)[classname]();
+							}
+							else {
+								// instantiate the object
+								handler = new window[classname](this);
+
+								// cache a reference in the element
+								$(this).data(classname,handler);
+
+								// start the object's behavior
+								if(handler.start) {
+									var element = this;
+									window.setTimeout(function() {
+										handler.start();
+										$('.DigitopiaInstance').trigger('DigitopiaNewInstance',element);
+									},0);
+								}
+
+							}
+						}
+						catch(err) {
+							alert('Could not initialize element:' + this.id + ' jsclass:' + classname + ' error:' + err);
+						}
+					}
+				}
+			});
+
+			if(didInstantiate) {
+				$('.DigitopiaInstance').trigger('DigitopiaReady',this);
+			}
+
+		};
+
+		// listent for events
+
+		this.element.on('DigitopiaInstantiate', function(e) {
+			e.stopPropagation();
+			if(e.target === this) {
+				self.instantiateElements();
+				self.element.data('lazyInstantiate').watchScroll();
+			}
+		});
+
+	};
+
+	$.fn.digitopiaController = GetJQueryPlugin('digitopiaController',digitopiaController);
+})(jQuery);
+
+(function($) {
+	function lazyInstantiate (elem,options) {
+		this.element = $(elem);
+		var self = this;
+
+		this.start = function() {
+			this.element.on('DigitopiaDidScroll',function(event) {
+				if(event.target === this) {
+					self.watchScroll();
+				}
+			});
+			self.watchScroll();
+		};
+
+		this.stop = function() {
+			this.element.off('DigitopiaDidScroll');
+		};
+
+		this.watchScroll = function() {
+			$('.lazy-instantiate:in-viewport').each(function(){
+				if($(this).is(':visible')) {
+					$(this).removeClass('lazy-instantiate');
+					var classes = $(this).data('lazy-jsclass').split(/,\s*/);
+					for(var i = 0; i < classes.length; i++) {
+						$(this)[classes[i]]();
+					};
+				}
+			});
+		};
+	}
+	$.fn.lazyInstantiate = GetJQueryPlugin('lazyInstantiate',lazyInstantiate);
+})(jQuery);
+;// digitopia/geometry.js - digitopia.js geometry controller
+// status: api stable
+// version: 0.9
+
+/*
+    Copyright (C) 2013 Michael Rhodes
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+(function($){
+	var digitopiaGeometry = function(element, options){
+		this.element = $(element);
+
+		var self = this;
+		
+		this.orientation = undefined;
+		this.scale = undefined;
+		this.touch = Modernizr.touch;
+		this.disabled = false;
+		this.forceScale = undefined;
+		
+		this.config = $.extend({
+			breakpoints: [
+				{ className: 'tiny', maxWidth: 480 },
+				{ className: 'small', maxWidth: 768 },
+				{ className: 'medium', maxWidth: 980 },
+				{ className: 'large', maxWidth: 1024 },
+				{ className: 'huge', maxWidth: undefined },
+			],
+			cookieDomain: undefined
+		}, options || {});
+
+		this.widths = [];
+		this.classes = [];
+		
+		this.disableResponsive = function(scale) {
+			$('body').addClass('disable-responsive');
+			this.disabled = true;
+			this.forceScale = scale;
+			this.detectGeometry();
+		}
+
+		this.enableResponsive = function() {
+			$('body').removeClass('disable-responsive');
+			this.disabled = false;
+			this.forceScale = '';
+			this.detectGeometry();
+		}
+
+		this.start = function() {
+			var css = '.show-hide{display:none;}\n';
+			this.widths.push(0);
+			for(var i = 0; i < this.config.breakpoints.length; i++) {
+				if(this.config.breakpoints[i].maxWidth) {
+					this.widths.push(this.config.breakpoints[i].maxWidth);
+				}
+				this.classes.push(this.config.breakpoints[i].className);
+				
+				css+='.' + this.config.breakpoints[i].className + ' .hidden-' + this.config.breakpoints[i].className + '{display:none;}\n';
+				css+='.not-' + this.config.breakpoints[i].className + ' .hidden-not-' + this.config.breakpoints[i].className + '{display:none;}\n';
+				css+='.' + this.config.breakpoints[i].className + ' .shown-' + this.config.breakpoints[i].className + '{display:block;}\n';
+				css+='.not-' + this.config.breakpoints[i].className + ' .shown-not-' + this.config.breakpoints[i].className + '{display:block;}\n';
+			}
+
+			var style = document.createElement('style');
+			style.type = 'text/css';
+			style.innerHTML = css;
+			document.getElementsByTagName('head')[0].appendChild(style);
+			
+			this.element.on('DigitopiaDidResize.digitopiaGeometry',function(e) {
+				e.stopPropagation();
+				if(e.target === this) {
+					self.detectGeometry();
+				}	
+			});
+	
+			this.detectGeometry();
+			
+			this.element.on('DigitopiaNewInstance.digitopiaGeometry', function(e,element) {
+				e.stopPropagation();
+				if(e.target === this) {
+					$(element).trigger('DigitopiaScaleChanged',self.scale);
+					$(element).trigger('DigitopiaOrientationChanged',self.orientation);
+				}
+			});
+		};
+		
+		this.stop = function() {
+			this.element.off('DigitopiaDidResize.digitopiaGeometry');
+			this.element.off('DigitopiaNewInstance.digitopiaGeometry');
+		};
+
+		this.detectGeometry =function(){
+			var newOrientation = this.orientation;
+			var newScale = this.classes[this.widths.length - 1];
+
+			if($(window).width() < $(window).height()) {
+				newOrientation = 'portrait';
+			}
+			else {
+				newOrientation = 'landscape';
+			}
+		
+			if(this.disabled) {
+				newScale = this.forceScale;
+			}
+			else {
+				var ww = $(window).width();
+				for(var i = 0; i < this.widths.length - 1; i++) {
+					if(ww >= this.widths[i] && ww < this.widths[i + 1]) {
+						newScale = this.classes[i];
+						break;
+					}
+				}
+			}
+	
+			var changed = 0;
+			
+			if(newScale !== this.scale) {
+				++changed;
+				for(var i = 0; i < this.classes.length; i++) {
+					if(this.classes[i] !== newScale) {
+						$('body').addClass('not-' + this.classes[i]);
+						$('body').removeClass(this.classes[i]);
+						$('body').removeClass('shown-' + this.classes[i]);
+						$('body').removeClass('hidden-' + this.classes[i]);
+					}
+					else {
+						$('body').removeClass('not-' + this.classes[i]);
+					}
+				}
+				$('body').addClass(newScale);
+				$('body').addClass('shown-' + newScale);
+				$('body').addClass('hidden-' + newScale);
+
+				$('.DigitopiaInstance').trigger("DigitopiaScaleChanged",newScale);
+			}
+
+			this.scale = newScale;
+	
+			if(newOrientation !== this.orientation) {
+				++changed;
+				$('body').removeClass('portrait').removeClass('landscape');
+				$('body').addClass(newOrientation);
+				$('.DigitopiaInstance').trigger("DigitopiaOrientationChanged",newOrientation);
+			}
+	
+			this.orientation = newOrientation;
+		
+			if(changed) { 
+				this.setHints();
+			}
+		}
+
+		this.setHints = function() {
+			var classes = '';
+			
+			if(this.orientation) {
+				if(classes) { classes += ' '; }
+				classes += this.orientation;
+			}
+	
+			if(this.scale) {
+				if(classes) { classes += ' '; }
+				classes += this.scale;
+			}
+	
+			if(classes !== this.getCookie('responsive')) {
+				this.setCookie('responsive',classes);
+			}
+		};
+		
+		this.getCookie = function(key) {
+			return $.cookie(key);
+		};
+
+		this.setCookie = function(key,value,expires) {
+			var options = {
+				path:'/',
+				domain: this.config.cookieDomain,
+				expires: expires
+			};
+			$.cookie(key, value, options);
+		};
+
+		this.deleteCookie = function(key) {
+			this.setCookie(key, null);
+		};
+
+	};
+
+	$.fn.digitopiaGeometry = GetJQueryPlugin('digitopiaGeometry',digitopiaGeometry);
+
+})(jQuery);;// digitopia/viewport.js - digitopia.js element position controller
+// status: api stable
+// version: 0.9
+
+/*
+    Copyright (C) 2013 Michael Rhodes
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+(function($){
+	var digitopiaViewport = function(element, options){
+		this.element = $(element);
+		
+		var self = this;
+
+		this.element.css({'position':'relative','overflow':'hidden'});
+		
+		this.settings = $.extend({
+			crop: $(this.element).data('crop') ? $(this.element).data('crop') : false,
+			align: $(this.element).data('align') ? $(this.element).data('align') : 'center',
+			blowup: $(this.element).data('blowup') ? $(this.element).data('blowup') : false,
+			trimHeight: $(this.element).data('trim-height') ? $(this.element).data('trim-height') : false,
+			listenTo: $(this.element).data('listen-to') ? $(this.element).data('listen-to') : false,
+		}, options || {});
+		
+		this.align = this.settings.align? this.settings.align.split(',') : [];
+		this.height = this.element.height();
+		
+		this.elements = $(this.element).children();
+		for(var i = 0; i < this.elements.length; i++) {
+			$(this.elements[i]).css({
+				'position':'absolute',
+				'max-width':'10000px'
+			});
+			$(this.elements[i]).data('inViewPort',self);
+		}
+
+		this.start = function() {
+			this.element.on('DigitopiaScaleChanged.' + this.id, function(e, scale) {
+				e.stopPropagation();
+				if(e.target === this) {
+					if(!self.settings.trimHeight) {
+						self.height = self.element.height();
+					}
+					self.fitElements(scale);
+				}
+			});
+			
+			if(!this.settings.listenTo) {
+				this.element.on('DigitopiaDidResize.' + this.id, function (e) {
+					e.stopPropagation();
+					if(e.target === this) {
+						self.fitElements();
+					}
+				});
+			}
+			else {
+				var id = $(this.settings.listenTo).attr('id');
+				this.element.on('digitopiaContainerDidResize' + id + '.' + this.id, function (e) {
+					e.stopPropagation();
+					if(e.target === this) {
+						self.fitElements();
+					}
+				});
+			}
+			
+			this.fitElements();
+		};
+		
+		this.stop = function() {
+			this.element.off('DigitopiaScaleChanged.' + this.id); 
+			if(!this.settings.listenTo) {
+				this.element.off('DigitopiaDidResize.' + this.id); 
+			}
+			else {
+				var id = $(this.settings.listenTo).attr('id');
+				this.element.off('digitopiaContainerDidResize' + id + '.' + this.id); 
+			}
+		};
+		
+		this.getAlign = function(find) {
+			this.align = this.settings.align? this.settings.align.split(',') : [];
+			for(var i=0; i < this.align.length; i++) {
+				if(this.align[i] === find) {
+					return true;
+				}
+			}
+			return false;
+		}
+	
+		this.fitElements = function () {	
+			var maxHeight = 0;
+			for(var i = 0; i < this.elements.length; i++) {	
+				var child = this.elements[i];
+
+				var width = $(child).data('width');
+				var height = $(child).data('height');
+	
+				var boxwidth = $(this.element).width();
+					
+				var boxheight = $(this.element).height();
+
+				if(this.settings.trimHeight) { boxheight = this.height }
+	
+				//console.log('width,height,boxwidth,boxheight',width,height,boxwidth,boxheight);
+				
+				var imgRatio = (height / width); 
+				var boxRatio = (boxheight / boxwidth); 
+				var mult = 1;
+	
+				if(this.settings.crop) {
+					if(imgRatio<boxRatio) { 
+						mult = boxheight / height;
+					} 
+					else { 
+						mult = boxwidth / width;
+					}
+				}
+				else {
+					if(imgRatio>boxRatio) { 
+						mult = boxheight / height;
+					} 
+					else { 
+						mult = boxwidth / width;
+					}
+				}
+	
+				width = width * mult;
+				height = height * mult;
+			
+				if(!this.settings.blowup) {
+					if($(child).data('width') && width > $(child).data('width')) {
+						width = $(child).data('width');
+					}
+			
+					if($(child).data('height') && height > $(child).data('height')) {
+						height = $(child).data('height');
+					}
+				}
+
+				if(this.settings.trimHeight) {
+					$(this.element).height(height);
+					boxheight = height;
+				}
+			
+				var top = (boxheight - height) / 2;
+				var left = (boxwidth - width) / 2;
+			
+				if(this.getAlign('top')) {
+					top = 0;
+				}
+	
+				if(this.getAlign('bottom')) {
+					top = boxheight - height;
+				}
+			
+				if(this.getAlign('left')) {
+					left = 0;
+				}
+	
+				if(this.getAlign('right')) {
+					left = boxwidth - width;
+				}
+
+				var css = {
+					'top':top + 'px',
+					'left':left + 'px',
+					'width':width + 'px',
+					'height':height + 'px'
+				}
+				
+														
+				$(child).css(css);
+			}
+		};
+	};
+
+	$.fn.digitopiaViewport = GetJQueryPlugin('digitopiaViewport',digitopiaViewport);
+
+})(jQuery);;// digitopia/lazy.js - digitopia.js lazy image controller
+// status: api stable
+// version: 0.9
+
+/*
+    Copyright (C) 2013 Michael Rhodes
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+(function($){
+	var digitopiaLazy = function(element, options){
+		this.element = $(element);
+
+		var self = this;
+
+		this.id = element.id;
+		this.scale = undefined;
+
+		this.loaded = false;
+
+		this.settings = $.extend({
+			enabledScales: $(this.element).data('enabled-scales') ? $(this.element).data('enabled-scales').split(',') : []
+		}, options || {});
+
+		this.start = function() {
+			if(!this.loaded) {
+				$(this.element).addClass('responsive-loading');
+
+				this.element.on('DigitopiaScaleChanged.' + this.id, function(e, scale) {
+					e.stopPropagation();
+					if(e.target === this) {
+						self.scale = scale;
+						self.lazy();
+					}
+				});
+
+				this.element.on('DigitopiaDidScroll.' + this.id, function(e, scale) {
+					e.stopPropagation();
+					if(e.target === this) {
+						self.lazy();
+					}
+				});
+
+				this.element.on('DigitopiaDidResize.' + this.id, function(e, scale) {
+					e.stopPropagation();
+					if(e.target === this) {
+						self.lazy();
+					}
+				});
+
+				this.element.on('DigitopiaLazy.' + this.id, function(e,force) {
+					e.stopPropagation();
+					if(e.target === this) {
+						self.lazy(force);
+					}
+				});
+
+				this.lazy();
+			}
+		};
+
+		this.stop = function() {
+			this.element.off('DigitopiaScaleChanged.' + this.id);
+			this.element.off('DigitopiaDidScroll.' + this.id);
+			this.element.off('DigitopiaDidResize.' + this.id);
+			this.element.off('DigitopiaLazy.' + this.id);
+		};
+
+		this.want = function() {
+			if(this.settings.enabledScales.length) {
+				if(this.scale) {
+					return this.settings.enabledScales.indexOf(this.scale) !== -1;
+				}
+				else {
+					return false;
+				}
+			}
+			else {
+				return true;
+			}
+		};
+
+		this.lazy = function (force) {
+			if(!this.loaded && this.want()) {
+				if(force || ($.inviewport(this.element, { threshold:0 } ) && $(this.element).is(':visible'))) {
+					this.element.removeClass('responsive-loading');
+					this.element.trigger('digitopiaLazyLoad');
+					this.loaded = true;
+				}
+			}
+		};
+
+		// listent for events
+
+	};
+
+	var digitopiaLazyImg = function(element, options){
+		this.element = $(element);
+
+		var self = this;
+
+		this.id = element.id;
+
+		this.loaded = false;
+
+		this.scale = undefined;
+		this.loadedScale = undefined;
+
+		this.start = function() {
+			//$(this.element).attr('src','/digitopia/images/lazy.gif');
+
+			this.element.on('digitopiaLazyLoad.'+ this.id, function(e,force) {
+				e.stopPropagation();
+				self.lazy(force);
+			});
+
+			this.element.on('DigitopiaScaleChanged.' + this.id, function(e,scale) {
+				e.stopPropagation();
+				self.scale = scale;
+				if(self.loaded && self.loadedScale != self.scale) {
+					self.load();
+				}
+			});
+
+			setTimeout(function() {
+				self.element.digitopiaLazy();
+			},0);
+		};
+
+		this.stop = function() {
+			this.element.off('digitopiaLazyLoad.' + this.id);
+			this.element.off('DigitopiaScaleChanged.' + this.id);
+		};
+
+		this.lazy = function (force) {
+			if(!this.loaded) {
+				this.load();
+			}
+		};
+
+		this.load = function(force) {
+			var src = $(this.element).data('lazy-src');
+
+			if($(this.element).data('lazy-'+this.scale+'-src')) {
+				src = $(this.element).data('lazy-'+this.scale+'-src');
+			}
+
+			if($(self.element).attr('src') != src) {
+				//flash('lazy ' + self.id + ' loading: ' + src + ' for scale ' + self.scale);
+				$(self.element).css({opacity:0}).attr('src', src).load(function() {
+					if (this.complete && typeof this.naturalWidth !== "undefined" && this.naturalWidth !== 0) {
+						$(this).data('width', this.naturalWidth);
+						$(this).data('height', this.naturalHeight);
+						if($(this).data('inViewPort')) {
+							$(this).data('inViewPort').fitElements();
+						}
+						
+						// next tick - do this after fitElements renders
+						var instance = this;
+						setTimeout(function () {
+							$(instance).animate({
+								opacity: 1
+							}, 250);
+						}, 0);
+					}
+				}).error(function() {
+					//$(this).attr('src','/digitopia/images/lazy.gif');
+				});
+			}
+			this.loaded = true;
+			this.loadedScale = this.scale;
+		};
+	};
+
+	$.fn.digitopiaLazy = GetJQueryPlugin('digitopiaLazy',digitopiaLazy);
+	$.fn.digitopiaLazyImg = GetJQueryPlugin('digitopiaLazyImg',digitopiaLazyImg);
+
+})(jQuery);
+;// digitopia/container.js - digitopia.js container controller
+// status: api stable
+// version: 0.9
+
+/*
+    Copyright (C) 2013 Michael Rhodes
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+(function($){
+	var digitopiaContainer = function(elem, options){
+		this.element = $(elem);
+		var self = this;
+		this.id = elem.id;
+
+		this.settings = $.extend({
+			scales: this.element.data('scales') ? this.element.data('scales').split(/\s*,\s*/) : [],
+			followElementWidth: this.element.data('follow-element-width'),
+			followElementHeight: this.element.data('follow-element-height'),
+			fillContainer: this.element.data('fill-container')
+		}, options || {});
+
+		this.active = undefined;
+
+		if(!this.settings.scales.length) {
+			this.active = true;
+		}
+
+		this.origHeight = elem.style.height;
+		this.origWidth = elem.style.width;
+
+		this.lastHeight = undefined;
+		this.lastWidth = undefined;
+
+		this.listenTo = {};
+
+		this.following = 0;
+
+		if(this.settings.followElementWidth) {
+			++this.following;
+			this.listenTo[$(this.settings.followElementWidth).attr('id')] = true;
+		}
+		if(this.settings.followElementHeight) {
+			++this.following;
+			this.listenTo[$(this.settings.followElementHeight).attr('id')] = true;
+		}
+		if(this.settings.fillContainer) {
+			++this.following;
+			if(this.settings.fillContainer === 'parent') {
+				setTimeout(function() {
+					self.element.parent().digitopiaContainer();
+				},0);
+				this.listenTo[this.element.parent().attr('id')] = true;
+			}
+			else {
+				setTimeout(function() {
+					$(self.settings.fillContainer).digitopiaContainer();
+				},0);
+				this.listenTo[$(this.settings.fillContainer).attr('id')] = true;
+			}
+		}
+
+		this.start = function() {
+			this.element.on('DigitopiaScaleChanged.' + this.id, function(e, scale) {
+				e.stopPropagation();
+				if(e.target === this) {
+					self.watchScale(scale);
+				}
+			});
+
+			if(this.following) {
+				for(var id in this.listenTo){
+					//console.log(this.id + ' is listenting to ' + id);
+					this.element.on('digitopiaContainerDidResize' + id + '.' + this.id, function (e) {
+						e.stopPropagation();
+						if(e.target === this) {
+							self.handleResize();
+						}
+					});
+				}
+			}
+			else {
+				//console.log(this.id + ' is listenting to all');
+				this.element.on('DigitopiaDidResize.' + this.id, function (e) {
+					e.stopPropagation();
+					if(e.target === this) {
+						self.handleResize();
+					}
+				});
+			}
+
+			this.handleResize();
+		};
+
+		this.stop = function() {
+			this.element.off('DigitopiaScaleChanged.' + this.id);
+
+			if(this.following) {
+				for(var id in this.listenTo){
+					this.element.off('digitopiaContainerDidResize' + id + '.' + this.id);
+				}
+			}
+			else {
+				this.element.off('DigitopiaDidResize.' + this.id);
+			}
+		};
+
+		this.watchScale = function(scale) {
+			var wasActive = this.active;
+
+			if(this.settings.scales.length) {
+				this.active = false;
+				for(var i = 0; i < this.settings.scales.length; i++) {
+					if(this.settings.scales[i] === scale) {
+						this.active = true;
+					}
+				}
+			}
+			else {
+				this.active = true;
+			}
+
+			if(!this.active) {
+				this.element.css({
+					'width': this.origWidth ? this.origWidth: "",
+					'height': this.origHeight ? this.origHeight : ""
+				});
+			}
+
+			if(wasActive != this.active) {
+				//console.log(this.id + ' now active? ' + this.active);
+			}
+
+			this.handleResize();
+		};
+
+		this.handleResize = function() {
+			var change = false;
+
+			var w = this.element.innerWidth();
+			var h = this.element.innerHeight();
+
+			if(this.active || this.active === undefined) {
+				if(this.settings.followElementWidth) {
+					if(w != $(this.settings.followElementWidth).innerWidth()) {
+						++change;
+						w = $(this.settings.followElementWidth).innerWidth();
+						this.element.outerWidth(w);
+					}
+				}
+
+				if(this.settings.followElementHeight) {
+					if(h != $(this.settings.followElementHeight).innerHeight()) {
+						++change;
+						var h = $(this.settings.followElementHeight).innerHeight();
+						this.element.outerHeight(h);
+					}
+				}
+			}
+
+			if(this.settings.fillContainer) {
+				var container = undefined;
+
+				if(this.settings.fillContainer === 'parent') {
+					container = this.element.parent();
+				}
+				else {
+					container = $(this.settings.fillContainer);
+				}
+
+				if(w != container.innerWidth()) {
+					++change;
+					w = container.innerWidth();
+					this.element.outerWidth(w);
+				}
+				if(h != container.innerHeight()) {
+					++change;
+					h = container.innerHeight();
+					this.element.outerHeight(h);
+				}
+			}
+
+			if(change || (w != this.lastWidth) || (h != this.lastHeight)) {
+				//console.log(this.id + ' changed',w,h);
+				this.element.find('.DigitopiaInstance').trigger('digitopiaContainerDidResize');
+				$('.DigitopiaInstance').trigger('digitopiaContainerDidResize'+this.id);
+				this.lastWidth = w;
+				this.lastHeight = h;
+			}
+		};
+	};
+
+	$.fn.digitopiaContainer = GetJQueryPlugin('digitopiaContainer',digitopiaContainer);
+
+})(jQuery);
+;// digitopia/ajax.js - digitopia.js ajax controller
+// status: api stable
+// version: 0.9
+
+/*
+    Copyright (C) 2013 Michael Rhodes
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+(function($){
+	var digitopiaAjax = function(element, options){
+		this.element = $(element);
+		this.id = element.id;
+		var self = this;
+
+		this.settings = $.extend({
+			src: $(this.element).data('src') ? $(this.element).data('src') : undefined,
+			type: $(this.element).data('type') ? $(this.element).data('type') : 'html',
+			inline: $(this.element).data('inline'),
+			noLazy: $(this.element).data('no-lazy') ? $(this.element).data('no-lazy') : false,
+			showLoading: $(this.element).data('show-loading') ? $(this.element).data('show-loading') : false,
+			clientCache: $(this.element).data('client-cache') ? $(this.element).data('client-cache') : false,
+			clientCacheKey: $(this.element).data('cache-key') ? $(this.element).data('cache-key') : undefined,
+			args: $(this.element).data('args') ? JSON.parse($(this.element).data('args')) : {},
+		}, options || {});
+
+		this.loaded = false;
+
+		this.start = function() {
+			if(!this.settings.noLazy) {
+				this.element.on('digitopiaLazyLoad.'+ this.id, function(e,force) {
+					e.stopPropagation();
+					if(e.target === this) {
+						self.ajaxLayer();
+					}
+				});
+				setTimeout(function() {
+					self.element.digitopiaLazy(self.settings);
+				},0);
+			}
+			else {
+				this.ajaxLayer();
+			}
+		};
+		
+		this.stop = function() {
+			if(!this.settings.noLazy) {
+				this.element.off('digitopiaLazyLoad.' + this.id);
+			}
+		};
+		
+		this.reload = function() {
+			this.loaded = false;
+			this.ajaxLayer(true);
+		};
+		
+		this.ajaxLayer = function() {
+			if(!this.loaded) {
+				this.loaded = true;
+			
+				var fromCache = undefined;
+				
+				if(this.settings.clientCache) {
+					var clientCacheKey = this.id;
+					if(this.settings.clientCacheKey) {
+						clientCacheKey += '-' + this.settings.clientCacheKey;
+					}
+					fromCache = this.isCached(this.settings.clientCache,clientCacheKey);
+				}
+
+				if(fromCache) {
+					this.ready(fromCache);
+				}
+				else {
+					this.ajaxRequest();
+
+					if(this.settings.showLoading) {
+						$(this.element).addClass('responsive-loading');
+					}
+				}
+			}
+		};
+
+		this.ajaxRequest = function() {
+			var path = this.settings.src;
+			if(typeof(rewriteUrls) !== 'undefined') {
+				path = rewriteUrls(path);
+			}
+
+			$.ajax({
+				type: 'GET',
+				url: path + '?' +  jQuery.param(this.settings.args),
+				dataType: this.settings.type,
+				success: function(result) {
+					if(self.settings.clientCache) {
+						var clientCacheKey = self.id;
+						if(self.settings.clientCacheKey) {
+							clientCacheKey += '-' + self.settings.clientCacheKey;
+						}
+						self.cacheIt(self.settings.clientCache,clientCacheKey,result);
+					}
+					self.ready(result);
+				},
+				error: function (request, status, error) {
+					if(request.responseText) {
+						alert(request.responseText);
+					}
+				}
+			});
+		};
+		
+		this.ready = function(response) {
+			this.element.removeClass('responsive-loading');
+			if(this.settings.inline) {
+				this.element.empty().append(response);
+				if($('body').data('digitopiaHijax')) {
+					$('body').data('digitopiaHijax').hijaxLinks(this.element);
+				}
+				$('body').trigger('DigitopiaInstantiate');
+			}
+			this.element.trigger('data',response);
+		};
+
+		this.cacheIt = function(type,key,value) {
+			if(type === 'localStorage') {
+				if(Modernizr.localstorage) {
+					localStorage[key] = JSON.stringify(value);
+				}
+			}
+			else if (type === 'sessionStorage') {
+				if(Modernizr.sessionstorage) {
+					sessionStorage[key] = JSON.stringify(value);
+				}
+			}
+		}
+
+		this.isCached = function(type,key) {
+			var value;
+
+			if(type === 'localStorage') {
+				if(Modernizr.localstorage) {
+					value = localStorage[key];
+				}
+			}
+			else if (type === 'sessionStorage') {
+				if(Modernizr.sessionstorage) {
+					value = sessionStorage[key];
+				}
+			}
+	
+			if(value != undefined) {
+				value = JSON.parse(value);
+			}
+
+			return value;
+		}
+	};
+
+	$.fn.digitopiaAjax = GetJQueryPlugin('digitopiaAjax',digitopiaAjax);
+
+})(jQuery);;// digitopia/hijax.js - digitopia.js hijax controller
+// status: api stable
+// version: 0.9
+
+/*
+    Copyright (C) 2013 Michael Rhodes
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+(function ($) {
+	function getPath(location) {
+		var path = location.pathname + location.search;
+		return path;
+	};
+
+	var digitopiaHijax = function (element, options) {
+		this.element = $(element);
+		var self = this;
+		this.currentPath = undefined;
+
+		this.startTime = undefined;
+
+		this.settings = $.extend({
+			// process first page (normally only used for paged with content handlers)
+			processOriginalPath: false,
+
+			// use location hash scheme
+			locationHash: false,
+
+			// use html5 history scheme
+			popState: Modernizr.history,
+
+			// don't hijax links like mailto or script
+			excludeRegex: new RegExp('^(\/\/|http|javascript|mailto|#)'),
+
+			// array of content handlers
+			contentHandlers: [],
+
+			// minimum time to delay merging content (for page transition animation)
+			debounce: undefined,
+
+			disableScrollAnimation: false,
+
+			scrollTop: 0,
+
+			nextScrollTop: 0
+		}, options || {});
+
+		if (!this.settings.processOriginalPath) {
+			this.currentPath = getPath(document.location);
+		}
+
+		this.start = function () {
+			this.hijaxLinks(this.element);
+
+			if (this.settings.locationHash) {
+				$(window).bind('hashchange.hijax', function () {
+					self.watchLocationHash();
+				});
+				this.watchLocationHash();
+			}
+
+			if (this.settings.popState) {
+				$(window).bind('popstate.hijax', function (event) {
+					self.watchPopState(event);
+				});
+				self.watchPopState();
+			}
+
+			$(this.element).on('DigitopiaReloadPage', function (e, href) {
+				e.stopPropagation();
+				if (e.target === this) {
+					self.settings.nextScrollTop = $(window).scrollTop();
+					self.hijaxLoad(self.currentPath, self.currentPath);
+				}
+			});
+
+			$(this.element).on('DigitopiaLoadPage', function (e, href) {
+				e.stopPropagation();
+				if (e.target === this) {
+					if (!self.settings.popState && !self.settings.locationHash) {
+						document.location.href = href;
+					}
+					else {
+						if (href && !self.settings.excludeRegex.exec(href)) {
+							//if (getPath(document.location) !== href) {
+							if (self.settings.locationHash) {
+								self.setLocationHash('hijax' + href);
+							}
+							else {
+								if (self.settings.popState) {
+									history.pushState(null, null, href);
+									self.watchPopState();
+								}
+							}
+							//}
+						}
+					}
+				}
+			});
+		};
+
+		this.stop = function () {
+			$('a').unbind('click.hijax');
+			if (this.settings.popState) {
+				$(window).unbind('popstate.hijax');
+			}
+			$(this.element).off('DigitopiaLoadPage');
+			$(this.element).off('DigitopiaReloadPage');
+		};
+
+		this.hijaxLoad = function (path, oldPath) {
+			var done = false;
+
+			if (typeof (rewriteUrls) !== 'undefined') {
+				path = rewriteUrls(path);
+			}
+
+			$('.DigitopiaInstance').trigger('DigitopiaWillLoadNewPage', [oldPath,
+				path
+			]);
+
+			if (this.settings.debounce) {
+				this.startTime = new Date();
+			}
+
+			if (this.settings.contentHandlers.length) {
+				for (var i = 0; i < this.settings.contentHandlers.length; i++) {
+					var match = path.match(this.settings.contentHandlers[i].path);
+					if (match) {
+						var content = undefined;
+
+						if (this.settings.contentHandlers[i].content) {
+							content = this.settings.contentHandlers[i].content;
+						}
+						else {
+							content = this.settings.contentHandlers[i].contentHandler(match);
+						}
+
+						self.mergeContent(content);
+						done = true;
+					}
+				}
+			}
+
+			if (!done) {
+				$.ajax({
+					type: "GET",
+					url: path,
+					dataType: 'html',
+					success: function (html) {
+						self.mergeContent(html);
+					},
+					error: function (request, status, error) {
+						if (request.responseText) {
+							alert('could not load page.');
+						}
+					}
+				});
+			}
+		};
+
+		this.mergeContent = function (html) {
+			$('.DigitopiaInstance').trigger('DigitopiaDidLoadNewPageContent');
+			var elapsed = 0;
+			if (this.settings.debounce) {
+				var now = new Date();
+				elapsed = now.getTime() - this.startTime.getTime();
+			}
+
+			if (this.settings.debounce && elapsed < self.settings.debounce) {
+				setTimeout(function (instance, content) {
+					return function () {
+						instance.mergeContent(content); // reveal the new page
+					}
+				}(this, html), self.settings.debounce - elapsed);
+			}
+			else {
+				var top = this.settings.nextScrollTop;
+
+				if (this.settings.disableScrollAnimation) {
+					$("html, body").scrollTop(top);
+				}
+				else {
+					$("html, body").animate({
+						scrollTop: top
+					}, '250');
+				}
+
+				var containers = $("[data-hijax]");
+
+				containers.each(function () {
+					var id = this.id;
+					$('#' + id).find('.DigitopiaInstance').trigger('DigitopiaStop');
+					$('#' + id).trigger('DigitopiaStop');
+				});
+
+				var doc = html.split(/(<body[^>]*>|<\/body>)/ig);
+				var docBody = $(doc[2]);
+
+				containers.each(function () {
+					var id = this.id;
+					var chunk = '';
+					chunk = $(docBody).find('#' + id);
+					if (!chunk || chunk.length === 0) {
+						chunk = $(docBody).filter('#' + id);
+					}
+					$('#' + id).empty().append(chunk.children());
+				});
+
+				var title = $(html).filter("title").text();
+				document.title = title;
+
+				this.contentMerged();
+			}
+		};
+
+		this.contentMerged = function () {
+
+			var containers = $("[data-hijax]");
+
+			containers.each(function () {
+				var id = this.id;
+				self.hijaxLinks('#' + id);
+			});
+
+			$('.DigitopiaInstance').trigger('DigitopiaInstantiate');
+
+			$('.DigitopiaInstance').trigger('DigitopiaDidLoadNewPage', getPath(
+				document.location));
+		};
+
+		this.hijaxLinks = function (node) {
+			$(node).find('a').unbind('click.hijax');
+			$(node).find('a').each(function () {
+				var href = $(this).attr('href');
+				if (href && !$(this).attr('target') && !$(this).data('no-hijax') && !
+					self.settings.excludeRegex.exec(href)) {
+					$(this).bind('click.hijax', function (e) {
+						e.preventDefault();
+						$('body').trigger('DigitopiaLoadPage', href);
+					});
+				}
+			});
+		}
+
+		this.watchPopState = function (event) {
+			if (this.currentPath || (this.currentPath === undefined && this.settings.processOriginalPath)) {
+				//if (getPath(document.location) != this.currentPath) {
+				var oldPath = this.currentPath;
+				this.currentPath = getPath(document.location);
+				this.settings.nextScrollTop = this.settings.scrollTop;
+				this.hijaxLoad(this.currentPath, oldPath);
+				//}
+			}
+		}
+
+		this.setLocationHash = function (params) {
+			location.hash = params;
+		}
+
+		this.watchLocationHash = function () {
+			if (location.hash != this.currentPath) {
+				var pathArray = location.hash.split('/');
+				if (pathArray[0] == '#hijax') {
+					var oldPath = this.currentPath;
+					pathArray.splice(0, 1);
+					this.currentPath = '/' + pathArray.join('/');
+					this.settings.nextScrollTop = this.settings.scrollTop;
+					this.hijaxLoad(this.currentPath, oldPath);
+				}
+			}
+		}
+	};
+
+	$.fn.digitopiaHijax = GetJQueryPlugin('digitopiaHijax', digitopiaHijax);
+
+})(jQuery);
+;// digitopia/wiggler.js - digitopia.js element animation controller
+// status: api stable
+// version: 0.9
+
+/*
+    Copyright (C) 2014 Michael Rhodes
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+(function($){
+
+	function wiggler(elem,motion) {
+		this.element = $(elem);
+		
+		this.options = undefined;
+		
+		this.animation = motion;
+		this.pcnt = 0;
+		this.lastpcnt = 0;
+		var self = this;
+		this.cached = false;
+		
+		var paused = true;
+
+		var animationQueue = [];
+		var pendingAnimationFrame = undefined;
+
+		function queueAnimation(frame) {
+			if(!paused) {
+				requestAnimationFrame(frame);
+			}
+		};
+
+		this.newAnimation = function(motion) {
+			this.animation = motion;
+			this.cached = false;
+			this.prepare();
+		};
+		
+		this.start = function() {
+			this.prepare();
+
+			$(window).focus(function() {
+				if(self.pcnt < 1) {
+					if(self.options) {
+						paused = false;
+						queueAnimation(function() {
+							self.starts = Date.now() - (self.options.duration * self.pcnt);
+							queueAnimation(function() {
+								self.timer();
+							});
+						});
+					}		
+				}
+			});
+
+			$(window).blur(function() {
+				paused = true;
+			});
+						
+			this.element.on('play',function(e,options) {
+				if(e.target == this) {
+					self.options = options;
+					self.resume();
+				}
+			});
+
+			this.element.on('pause',function(e,options) {
+				if(e.target == this) {
+					paused = true;
+				}
+			});
+
+			
+			this.element.on('scrub',function(e, options) {
+				if(e.target == this) {
+					self.options = options;
+					self.pcnt = self.options.time / self.options.duration;
+					self.pcnt = Math.round(self.pcnt * 10000) / 10000;
+					if(self.pcnt != self.lastpcnt) {	
+						self.action();
+						self.lastpcnt = self.pcnt;
+					}
+				}
+			});
+		};
+		
+		this.stop = function() {
+			paused = true;
+			this.element.off('play');
+			this.element.off('pause');
+			this.element.off('scrub');
+		};
+		
+		this.resume = function() {
+			paused = false;
+			queueAnimation(function() {
+				self.pcnt = 0;
+				self.cached = false;
+				self.prepare();
+				self.starts = Date.now();
+				queueAnimation(function() {
+					self.timer();
+				});
+			});			
+		};
+	
+		this.timer = function() {
+			if(!paused) {
+				var now = Date.now();
+				this.pcnt = (now - this.starts) / this.options.duration;
+				if(this.options.direction == -1) {
+					this.pcnt = 1 - this.pcnt;
+				}
+				if(this.pcnt < 0) { this.pcnt = 0; }
+				if(this.pcnt > 1) { this.pcnt = 1; }
+
+				this.pcnt = Math.round(this.pcnt * 10000) / 10000;
+			
+				if(this.pcnt != this.lastpcnt) {	
+					this.action();
+					this.lastpcnt = this.pcnt;
+				
+					//console.log(this.pcnt);
+				}
+			
+				if(this.pcnt > 0 && this.pcnt < 1) {	
+					queueAnimation(function() {
+						self.timer();
+					});
+				}
+				else {
+					if(this.options.onComplete) {
+						this.options.onComplete();
+					}
+					if(this.options.loop) {
+						this.options.direction = this.options.direction * -1;
+						this.start();
+					}
+				}
+			}
+		};
+	
+		this.action = function() {
+			//console.log('action ' + this.pcnt);
+			for(var q = 0; q < this.animation.quelist.length; q++) {
+				this.performQue(this.animation.quelist[q]);
+			}
+		};
+		
+		this.prepare = function() {
+			if(!this.cached) {
+				this.cached = true;
+				var regexNumeric = /[\-+]?[\d]*\.?[\d]+/g;
+				for(q = 0; q < this.animation.quelist.length; q++) {
+					var que = this.animation.quelist[q];
+					que.frame_in_progress = undefined;
+					if(que.keyframes) {
+						for(var i = 0; i <que.keyframes.length; i++) {
+							que.keyframes[i].cached = {};
+							for (var property in que.keyframes[i].css) {
+								que.keyframes[i].cached[property] = { vals: [] };
+								var format = que.keyframes[i].css[property].replace(regexNumeric, function(n) {
+									que.keyframes[i].cached[property].vals.push(+n);
+									return '{?}';
+								});
+					
+								que.keyframes[i].cached[property].format = format;	
+							}	
+						}
+					}
+				}
+			}
+		};
+		
+		this.doTrigger = function(element,trigger) {
+			if(!paused) {
+				if(trigger.css) {
+					$(element).css(trigger.css);
+				}
+			
+				if(trigger.callback) {
+					trigger.callback.call();
+				}
+			}
+		};
+				
+	
+		this.performQue = function(que) {
+			if(que.triggers && que.triggers.length) {
+				for(var i = 0; i < que.triggers.length; i++) {
+					var trigger = que.triggers[i];
+					if(self.options.direction == -1) {
+						if(this.pcnt <= trigger.percent / 100) {
+							if(!trigger.firedReverse) {
+								trigger.firedReverse = true;
+								trigger.firedForward = false;
+								self.doTrigger(que.element,trigger.reverse);
+							}
+						}
+					}
+					else {
+						if(this.pcnt >= trigger.percent / 100) {
+							if(!trigger.firedForward) {
+								trigger.firedForward = true;
+								trigger.firedReverse = false;
+								self.doTrigger(que.element,trigger.forward);
+							}
+						}
+					}
+				}
+			};
+			
+			if(que.keyframes && que.keyframes.length) {
+				var start = que.keyframes[0].percent / 100;
+				var end = que.keyframes[que.keyframes.length - 1].percent / 100;
+				var duration = (end - start) * this.options.duration;
+				var easing = que.easing;
+				var target_frame = undefined;
+				var origin_frame = undefined;
+	
+				if(this.pcnt >= start && this.pcnt <= end) {
+					if(self.options.direction == -1) {
+						for(var i = que.keyframes.length -1; i >= 1; i--) {
+							if(this.pcnt <= que.keyframes[i].percent / 100) {
+								target_frame = i - 1;
+								origin_frame = i;
+							}
+						}
+					}
+					else {
+						for(var i = 1; i < que.keyframes.length; i++) {
+							if(this.pcnt <= que.keyframes[i].percent / 100) {
+								target_frame = i;
+								origin_frame = i - 1;
+								break;
+							}
+						}
+					}
+			
+				
+					if(que.keyframes[target_frame].easing) {
+						easing = que.keyframes[target_frame].easing;
+					}
+				
+					var qpcnt = ((this.pcnt * 100) - que.keyframes[origin_frame].percent) / (que.keyframes[target_frame].percent - que.keyframes[origin_frame].percent);
+					qpcnt = Math.round(qpcnt * 100) / 100;
+				
+					//console.log(this.pcnt, origin_frame, target_frame, qpcnt );
+							
+					var newCSS = {};
+
+					var regexNumeric = /[\-+]?[\d]*\.?[\d]+/g;
+			
+					for (var property in que.keyframes[origin_frame].css) {
+
+						var format;
+					
+						var regexPlaceholder = /\{\?\}/;
+					
+						var result = que.keyframes[target_frame].cached[property].format;
+					
+						for(var j = 0; j < que.keyframes[target_frame].cached[property].vals.length; j++) {
+					
+							var origin = parseFloat(que.keyframes[origin_frame].cached[property].vals[j]);
+							var target = que.keyframes[target_frame].cached[property].vals[j];
+							var delta  = target - origin;
+
+							var value = undefined;
+						
+							if(easing) {
+								value = $.easing[easing](qpcnt, qpcnt * duration, origin, delta, duration);
+							}
+							else {
+								value = origin + (delta * qpcnt);
+							}
+							
+							result = result.replace(regexPlaceholder, value);
+						}
+
+						newCSS[property] = result;
+					}
+
+					var frame = function(element,css) {
+						return function() {
+							element.css(css)
+						}
+					}($(que.element),newCSS);
+							
+					queueAnimation(frame);	
+
+				}
+			
+				if(que.frame_in_progress != undefined && target_frame != que.frame_in_progress) { // set final frame state if needed
+					//console.log('final',que.keyframes[que.frame_in_progress]);
+					var newCSS = que.keyframes[que.frame_in_progress].css;
+					que.frame_in_progress = undefined;
+					var frame = function(element,css) {
+						return function() {
+							element.css(css)
+						}
+					}($(que.element),newCSS);		
+					queueAnimation(frame);
+				}
+
+				que.frame_in_progress = target_frame;
+			}
+		};
+	}
+
+	$.fn.wiggler = GetJQueryPlugin('wiggler',wiggler);
+})(jQuery);
+
+;/**
+ * Autofill event polyfill ##version:1.0.0##
+ * (c) 2014 Google, Inc.
+ * License: MIT
+ */
+(function(window) {
+  var $ = window.jQuery || window.angular.element;
+  var rootElement = window.document.documentElement,
+    $rootElement = $(rootElement);
+
+  addGlobalEventListener('change', markValue);
+  addValueChangeByJsListener(markValue);
+
+  $.prototype.checkAndTriggerAutoFillEvent = jqCheckAndTriggerAutoFillEvent;
+
+  // Need to use blur and not change event
+  // as Chrome does not fire change events in all cases an input is changed
+  // (e.g. when starting to type and then finish the input by auto filling a username)
+  addGlobalEventListener('blur', function(target) {
+    // setTimeout needed for Chrome as it fills other
+    // form fields a little later...
+    window.setTimeout(function() {
+      findParentForm(target).find('input').checkAndTriggerAutoFillEvent();
+    }, 20);
+  });
+
+  function DOMContentLoadedListener() {
+    // mark all values that are present when the DOM is ready.
+    // We don't need to trigger a change event here,
+    // as js libs start with those values already being set!
+    forEach(document.getElementsByTagName('input'), markValue);
+
+    // The timeout is needed for Chrome as it auto fills
+    // login forms some time after DOMContentLoaded!
+    window.setTimeout(function() {
+      $rootElement.find('input').checkAndTriggerAutoFillEvent();
+    }, 200);
+  }
+
+  // IE8 compatibility issue
+  if(!window.document.addEventListener){
+    window.document.attachEvent('DOMContentLoaded', DOMContentLoadedListener);
+  }else{
+    window.document.addEventListener('DOMContentLoaded', DOMContentLoadedListener, false);
+  }
+
+  return;
+
+  // ----------
+
+  function jqCheckAndTriggerAutoFillEvent() {
+    var i, el;
+    for (i=0; i<this.length; i++) {
+      el = this[i];
+      if (!valueMarked(el)) {
+        markValue(el);
+        triggerChangeEvent(el);
+      }
+    }
+  }
+
+  function valueMarked(el) {
+    if (! ("$$currentValue" in el) ) {
+      // First time we see an element we take it's value attribute
+      // as real value. This might have been filled in the backend,
+      // ...
+      // Note: it's important to not use the value property here!
+      el.$$currentValue = el.getAttribute('value');
+    }
+
+    var val = el.value,
+         $$currentValue = el.$$currentValue;
+    if (!val && !$$currentValue) {
+      return true;
+    }
+    return val === $$currentValue;
+  }
+
+  function markValue(el) {
+    el.$$currentValue = el.value;
+  }
+
+  function addValueChangeByJsListener(listener) {
+    var jq = window.jQuery || window.angular.element,
+        jqProto = jq.prototype;
+    var _val = jqProto.val;
+    jqProto.val = function(newValue) {
+      var res = _val.apply(this, arguments);
+      if (arguments.length > 0) {
+        forEach(this, function(el) {
+          listener(el, newValue);
+        });
+      }
+      return res;
+    };
+  }
+
+  function addGlobalEventListener(eventName, listener) {
+    // Use a capturing event listener so that
+    // we also get the event when it's stopped!
+    // Also, the blur event does not bubble.
+    if(!rootElement.addEventListener){
+      rootElement.attachEvent(eventName, onEvent);
+    }else{
+      rootElement.addEventListener(eventName, onEvent, true);
+    }
+
+    function onEvent(event) {
+      var target = event.target;
+      listener(target);
+    }
+  }
+
+  function findParentForm(el) {
+    while (el) {
+      if (el.nodeName === 'FORM') {
+        return $(el);
+      }
+      el = el.parentNode;
+    }
+    return $();
+  }
+
+  function forEach(arr, listener) {
+    if (arr.forEach) {
+      return arr.forEach(listener);
+    }
+    var i;
+    for (i=0; i<arr.length; i++) {
+      listener(arr[i]);
+    }
+  }
+
+  function triggerChangeEvent(element) {
+    var doc = window.document;
+    var event = doc.createEvent("HTMLEvents");
+    event.initEvent("change", true, true);
+    element.dispatchEvent(event);
+  }
+
+
+
+})(window);
+;/*
+ *
+ * More info at [www.dropzonejs.com](http://www.dropzonejs.com)
+ *
+ * Copyright (c) 2012, Matias Meno
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ */
+
+(function () {
+	var Dropzone, Emitter, camelize, contentLoaded, detectVerticalSquash,
+		drawImageIOSFix, noop, without,
+		__slice = [].slice,
+		__hasProp = {}.hasOwnProperty,
+		__extends = function (child, parent) {
+			for (var key in parent) {
+				if (__hasProp.call(parent, key)) child[key] = parent[key];
+			}
+
+			function ctor() {
+				this.constructor = child;
+			}
+			ctor.prototype = parent.prototype;
+			child.prototype = new ctor();
+			child.__super__ = parent.prototype;
+			return child;
+		};
+
+	noop = function () {};
+
+	Emitter = (function () {
+		function Emitter() {}
+
+		Emitter.prototype.addEventListener = Emitter.prototype.on;
+
+		Emitter.prototype.on = function (event, fn) {
+			this._callbacks = this._callbacks || {};
+			if (!this._callbacks[event]) {
+				this._callbacks[event] = [];
+			}
+			this._callbacks[event].push(fn);
+			return this;
+		};
+
+		Emitter.prototype.emit = function () {
+			var args, callback, callbacks, event, _i, _len;
+			event = arguments[0], args = 2 <= arguments.length ? __slice.call(
+				arguments, 1) : [];
+			this._callbacks = this._callbacks || {};
+			callbacks = this._callbacks[event];
+			if (callbacks) {
+				for (_i = 0, _len = callbacks.length; _i < _len; _i++) {
+					callback = callbacks[_i];
+					callback.apply(this, args);
+				}
+			}
+			return this;
+		};
+
+		Emitter.prototype.removeListener = Emitter.prototype.off;
+
+		Emitter.prototype.removeAllListeners = Emitter.prototype.off;
+
+		Emitter.prototype.removeEventListener = Emitter.prototype.off;
+
+		Emitter.prototype.off = function (event, fn) {
+			var callback, callbacks, i, _i, _len;
+			if (!this._callbacks || arguments.length === 0) {
+				this._callbacks = {};
+				return this;
+			}
+			callbacks = this._callbacks[event];
+			if (!callbacks) {
+				return this;
+			}
+			if (arguments.length === 1) {
+				delete this._callbacks[event];
+				return this;
+			}
+			for (i = _i = 0, _len = callbacks.length; _i < _len; i = ++_i) {
+				callback = callbacks[i];
+				if (callback === fn) {
+					callbacks.splice(i, 1);
+					break;
+				}
+			}
+			return this;
+		};
+
+		return Emitter;
+
+	})();
+
+	Dropzone = (function (_super) {
+		var extend, resolveOption;
+
+		__extends(Dropzone, _super);
+
+		Dropzone.prototype.Emitter = Emitter;
+
+
+		/*
+		This is a list of all available events you can register on a dropzone object.
+
+		You can register an event handler like this:
+
+		    dropzone.on("dragEnter", function() { });
+		 */
+
+		Dropzone.prototype.events = ["drop", "dragstart", "dragend", "dragenter",
+			"dragover", "dragleave", "addedfile", "addedfiles", "removedfile",
+			"thumbnail", "error", "errormultiple", "processing",
+			"processingmultiple", "uploadprogress", "totaluploadprogress", "sending",
+			"sendingmultiple", "success", "successmultiple", "canceled",
+			"canceledmultiple", "complete", "completemultiple", "reset",
+			"maxfilesexceeded", "maxfilesreached", "queuecomplete"
+		];
+
+		Dropzone.prototype.defaultOptions = {
+			url: null,
+			method: "post",
+			withCredentials: false,
+			parallelUploads: 2,
+			uploadMultiple: false,
+			maxFilesize: 256,
+			paramName: "file",
+			createImageThumbnails: true,
+			maxThumbnailFilesize: 10,
+			thumbnailWidth: 120,
+			thumbnailHeight: 120,
+			filesizeBase: 1000,
+			maxFiles: null,
+			params: {},
+			clickable: true,
+			ignoreHiddenFiles: true,
+			acceptedFiles: null,
+			acceptedMimeTypes: null,
+			autoProcessQueue: true,
+			autoQueue: true,
+			addRemoveLinks: false,
+			previewsContainer: null,
+			hiddenInputContainer: "body",
+			capture: null,
+			dictDefaultMessage: "Drop files here to upload",
+			dictFallbackMessage: "Your browser does not support drag'n'drop file uploads.",
+			dictFallbackText: "Please use the fallback form below to upload your files like in the olden days.",
+			dictFileTooBig: "File is too big ({{filesize}}MiB). Max filesize: {{maxFilesize}}MiB.",
+			dictInvalidFileType: "You can't upload files of this type.",
+			dictResponseError: "Server responded with {{statusCode}} code.",
+			dictCancelUpload: "Cancel upload",
+			dictCancelUploadConfirmation: "Are you sure you want to cancel this upload?",
+			dictRemoveFile: "Remove file",
+			dictRemoveFileConfirmation: null,
+			dictMaxFilesExceeded: "You can not upload any more files.",
+			accept: function (file, done) {
+				return done();
+			},
+			init: function () {
+				return noop;
+			},
+			forceFallback: false,
+			fallback: function () {
+				var child, messageElement, span, _i, _len, _ref;
+				this.element.className = "" + this.element.className +
+					" dz-browser-not-supported";
+				_ref = this.element.getElementsByTagName("div");
+				for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+					child = _ref[_i];
+					if (/(^| )dz-message($| )/.test(child.className)) {
+						messageElement = child;
+						child.className = "dz-message";
+						continue;
+					}
+				}
+				if (!messageElement) {
+					messageElement = Dropzone.createElement(
+						"<div class=\"dz-message\"><span></span></div>");
+					this.element.appendChild(messageElement);
+				}
+				span = messageElement.getElementsByTagName("span")[0];
+				if (span) {
+					if (span.textContent != null) {
+						span.textContent = this.options.dictFallbackMessage;
+					}
+					else if (span.innerText != null) {
+						span.innerText = this.options.dictFallbackMessage;
+					}
+				}
+				return this.element.appendChild(this.getFallbackForm());
+			},
+			resize: function (file) {
+				var info, srcRatio, trgRatio;
+				info = {
+					srcX: 0,
+					srcY: 0,
+					srcWidth: file.width,
+					srcHeight: file.height
+				};
+				srcRatio = file.width / file.height;
+				info.optWidth = this.options.thumbnailWidth;
+				info.optHeight = this.options.thumbnailHeight;
+				if ((info.optWidth == null) && (info.optHeight == null)) {
+					info.optWidth = info.srcWidth;
+					info.optHeight = info.srcHeight;
+				}
+				else if (info.optWidth == null) {
+					info.optWidth = srcRatio * info.optHeight;
+				}
+				else if (info.optHeight == null) {
+					info.optHeight = (1 / srcRatio) * info.optWidth;
+				}
+				trgRatio = info.optWidth / info.optHeight;
+				if (file.height < info.optHeight || file.width < info.optWidth) {
+					info.trgHeight = info.srcHeight;
+					info.trgWidth = info.srcWidth;
+				}
+				else {
+					if (srcRatio > trgRatio) {
+						info.srcHeight = file.height;
+						info.srcWidth = info.srcHeight * trgRatio;
+					}
+					else {
+						info.srcWidth = file.width;
+						info.srcHeight = info.srcWidth / trgRatio;
+					}
+				}
+				info.srcX = (file.width - info.srcWidth) / 2;
+				info.srcY = (file.height - info.srcHeight) / 2;
+				return info;
+			},
+
+			/*
+			Those functions register themselves to the events on init and handle all
+			the user interface specific stuff. Overwriting them won't break the upload
+			but can break the way it's displayed.
+			You can overwrite them if you don't like the default behavior. If you just
+			want to add an additional event handler, register it on the dropzone object
+			and don't overwrite those options.
+			 */
+			drop: function (e) {
+				return this.element.classList.remove("dz-drag-hover");
+			},
+			dragstart: noop,
+			dragend: function (e) {
+				return this.element.classList.remove("dz-drag-hover");
+			},
+			dragenter: function (e) {
+				return this.element.classList.add("dz-drag-hover");
+			},
+			dragover: function (e) {
+				return this.element.classList.add("dz-drag-hover");
+			},
+			dragleave: function (e) {
+				return this.element.classList.remove("dz-drag-hover");
+			},
+			paste: noop,
+			reset: function () {
+				return this.element.classList.remove("dz-started");
+			},
+			addedfile: function (file) {
+				var node, removeFileEvent, removeLink, _i, _j, _k, _len, _len1, _len2,
+					_ref, _ref1, _ref2, _results;
+				if (this.element === this.previewsContainer) {
+					this.element.classList.add("dz-started");
+				}
+				if (this.previewsContainer) {
+					file.previewElement = Dropzone.createElement(this.options.previewTemplate
+						.trim());
+					file.previewTemplate = file.previewElement;
+					this.previewsContainer.appendChild(file.previewElement);
+					_ref = file.previewElement.querySelectorAll("[data-dz-name]");
+					for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+						node = _ref[_i];
+						node.textContent = file.name;
+					}
+					_ref1 = file.previewElement.querySelectorAll("[data-dz-size]");
+					for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+						node = _ref1[_j];
+						node.innerHTML = this.filesize(file.size);
+					}
+					if (this.options.addRemoveLinks) {
+						file._removeLink = Dropzone.createElement(
+							"<a class=\"dz-remove\" href=\"javascript:undefined;\" data-dz-remove>" +
+							this.options.dictRemoveFile + "</a>");
+						file.previewElement.appendChild(file._removeLink);
+					}
+					removeFileEvent = (function (_this) {
+						return function (e) {
+							e.preventDefault();
+							e.stopPropagation();
+							if (file.status === Dropzone.UPLOADING) {
+								return Dropzone.confirm(_this.options.dictCancelUploadConfirmation,
+									function () {
+										return _this.removeFile(file);
+									});
+							}
+							else {
+								if (_this.options.dictRemoveFileConfirmation) {
+									return Dropzone.confirm(_this.options.dictRemoveFileConfirmation,
+										function () {
+											return _this.removeFile(file);
+										});
+								}
+								else {
+									return _this.removeFile(file);
+								}
+							}
+						};
+					})(this);
+					_ref2 = file.previewElement.querySelectorAll("[data-dz-remove]");
+					_results = [];
+					for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+						removeLink = _ref2[_k];
+						_results.push(removeLink.addEventListener("click", removeFileEvent));
+					}
+					return _results;
+				}
+			},
+			removedfile: function (file) {
+				var _ref;
+				if (file.previewElement) {
+					if ((_ref = file.previewElement) != null) {
+						_ref.parentNode.removeChild(file.previewElement);
+					}
+				}
+				return this._updateMaxFilesReachedClass();
+			},
+			thumbnail: function (file, dataUrl) {
+				var thumbnailElement, _i, _len, _ref;
+				if (file.previewElement) {
+					file.previewElement.classList.remove("dz-file-preview");
+					_ref = file.previewElement.querySelectorAll("[data-dz-thumbnail]");
+					for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+						thumbnailElement = _ref[_i];
+						thumbnailElement.alt = file.name;
+						thumbnailElement.src = dataUrl;
+					}
+					return setTimeout(((function (_this) {
+						return function () {
+							return file.previewElement.classList.add("dz-image-preview");
+						};
+					})(this)), 1);
+				}
+			},
+			error: function (file, message) {
+				var node, _i, _len, _ref, _results;
+				if (file.previewElement) {
+					file.previewElement.classList.add("dz-error");
+					if (typeof message !== "String" && message.error) {
+						message = message.error;
+					}
+					_ref = file.previewElement.querySelectorAll("[data-dz-errormessage]");
+					_results = [];
+					for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+						node = _ref[_i];
+						_results.push(node.textContent = message);
+					}
+					return _results;
+				}
+			},
+			errormultiple: noop,
+			processing: function (file) {
+				if (file.previewElement) {
+					file.previewElement.classList.add("dz-processing");
+					if (file._removeLink) {
+						return file._removeLink.textContent = this.options.dictCancelUpload;
+					}
+				}
+			},
+			processingmultiple: noop,
+			uploadprogress: function (file, progress, bytesSent) {
+				var node, _i, _len, _ref, _results;
+				if (file.previewElement) {
+					_ref = file.previewElement.querySelectorAll(
+						"[data-dz-uploadprogress]");
+					_results = [];
+					for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+						node = _ref[_i];
+						if (node.nodeName === 'PROGRESS') {
+							_results.push(node.value = progress);
+						}
+						else {
+							_results.push(node.style.width = "" + progress + "%");
+						}
+					}
+					return _results;
+				}
+			},
+			totaluploadprogress: noop,
+			sending: noop,
+			sendingmultiple: noop,
+			success: function (file) {
+				if (file.previewElement) {
+					return file.previewElement.classList.add("dz-success");
+				}
+			},
+			successmultiple: noop,
+			canceled: function (file) {
+				return this.emit("error", file, "Upload canceled.");
+			},
+			canceledmultiple: noop,
+			complete: function (file) {
+				if (file._removeLink) {
+					file._removeLink.textContent = this.options.dictRemoveFile;
+				}
+				if (file.previewElement) {
+					return file.previewElement.classList.add("dz-complete");
+				}
+			},
+			completemultiple: noop,
+			maxfilesexceeded: noop,
+			maxfilesreached: noop,
+			queuecomplete: noop,
+			addedfiles: noop,
+			previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n  <div class=\"dz-image\"><img data-dz-thumbnail /></div>\n  <div class=\"dz-details\">\n    <div class=\"dz-size\"><span data-dz-size></span></div>\n    <div class=\"dz-filename\"><span data-dz-name></span></div>\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n  <div class=\"dz-success-mark\">\n    <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n      <title>Check</title>\n      <defs></defs>\n      <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n        <path d=\"M23.5,31.8431458 L17.5852419,25.9283877 C16.0248253,24.3679711 13.4910294,24.366835 11.9289322,25.9289322 C10.3700136,27.4878508 10.3665912,30.0234455 11.9283877,31.5852419 L20.4147581,40.0716123 C20.5133999,40.1702541 20.6159315,40.2626649 20.7218615,40.3488435 C22.2835669,41.8725651 24.794234,41.8626202 26.3461564,40.3106978 L43.3106978,23.3461564 C44.8771021,21.7797521 44.8758057,19.2483887 43.3137085,17.6862915 C41.7547899,16.1273729 39.2176035,16.1255422 37.6538436,17.6893022 L23.5,31.8431458 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" stroke-opacity=\"0.198794158\" stroke=\"#747474\" fill-opacity=\"0.816519475\" fill=\"#FFFFFF\" sketch:type=\"MSShapeGroup\"></path>\n      </g>\n    </svg>\n  </div>\n  <div class=\"dz-error-mark\">\n    <svg width=\"54px\" height=\"54px\" viewBox=\"0 0 54 54\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:sketch=\"http://www.bohemiancoding.com/sketch/ns\">\n      <title>Error</title>\n      <defs></defs>\n      <g id=\"Page-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\" sketch:type=\"MSPage\">\n        <g id=\"Check-+-Oval-2\" sketch:type=\"MSLayerGroup\" stroke=\"#747474\" stroke-opacity=\"0.198794158\" fill=\"#FFFFFF\" fill-opacity=\"0.816519475\">\n          <path d=\"M32.6568542,29 L38.3106978,23.3461564 C39.8771021,21.7797521 39.8758057,19.2483887 38.3137085,17.6862915 C36.7547899,16.1273729 34.2176035,16.1255422 32.6538436,17.6893022 L27,23.3431458 L21.3461564,17.6893022 C19.7823965,16.1255422 17.2452101,16.1273729 15.6862915,17.6862915 C14.1241943,19.2483887 14.1228979,21.7797521 15.6893022,23.3461564 L21.3431458,29 L15.6893022,34.6538436 C14.1228979,36.2202479 14.1241943,38.7516113 15.6862915,40.3137085 C17.2452101,41.8726271 19.7823965,41.8744578 21.3461564,40.3106978 L27,34.6568542 L32.6538436,40.3106978 C34.2176035,41.8744578 36.7547899,41.8726271 38.3137085,40.3137085 C39.8758057,38.7516113 39.8771021,36.2202479 38.3106978,34.6538436 L32.6568542,29 Z M27,53 C41.3594035,53 53,41.3594035 53,27 C53,12.6405965 41.3594035,1 27,1 C12.6405965,1 1,12.6405965 1,27 C1,41.3594035 12.6405965,53 27,53 Z\" id=\"Oval-2\" sketch:type=\"MSShapeGroup\"></path>\n        </g>\n      </g>\n    </svg>\n  </div>\n</div>"
+		};
+
+		extend = function () {
+			var key, object, objects, target, val, _i, _len;
+			target = arguments[0], objects = 2 <= arguments.length ? __slice.call(
+				arguments, 1) : [];
+			for (_i = 0, _len = objects.length; _i < _len; _i++) {
+				object = objects[_i];
+				for (key in object) {
+					val = object[key];
+					target[key] = val;
+				}
+			}
+			return target;
+		};
+
+		function Dropzone(element, options) {
+			var elementOptions, fallback, _ref;
+			this.element = element;
+			this.version = Dropzone.version;
+			this.defaultOptions.previewTemplate = this.defaultOptions.previewTemplate
+				.replace(/\n*/g, "");
+			this.clickableElements = [];
+			this.listeners = [];
+			this.files = [];
+			if (typeof this.element === "string") {
+				this.element = document.querySelector(this.element);
+			}
+			if (!(this.element && (this.element.nodeType != null))) {
+				throw new Error("Invalid dropzone element.");
+			}
+			if (this.element.dropzone) {
+				throw new Error("Dropzone already attached.");
+			}
+			Dropzone.instances.push(this);
+			this.element.dropzone = this;
+			elementOptions = (_ref = Dropzone.optionsForElement(this.element)) !=
+				null ? _ref : {};
+			this.options = extend({}, this.defaultOptions, elementOptions, options !=
+				null ? options : {});
+			if (this.options.forceFallback || !Dropzone.isBrowserSupported()) {
+				return this.options.fallback.call(this);
+			}
+			if (this.options.url == null) {
+				this.options.url = this.element.getAttribute("action");
+			}
+			if (!this.options.url) {
+				throw new Error("No URL provided.");
+			}
+			if (this.options.acceptedFiles && this.options.acceptedMimeTypes) {
+				throw new Error(
+					"You can't provide both 'acceptedFiles' and 'acceptedMimeTypes'. 'acceptedMimeTypes' is deprecated."
+				);
+			}
+			if (this.options.acceptedMimeTypes) {
+				this.options.acceptedFiles = this.options.acceptedMimeTypes;
+				delete this.options.acceptedMimeTypes;
+			}
+			this.options.method = this.options.method.toUpperCase();
+			if ((fallback = this.getExistingFallback()) && fallback.parentNode) {
+				fallback.parentNode.removeChild(fallback);
+			}
+			if (this.options.previewsContainer !== false) {
+				if (this.options.previewsContainer) {
+					this.previewsContainer = Dropzone.getElement(this.options.previewsContainer,
+						"previewsContainer");
+				}
+				else {
+					this.previewsContainer = this.element;
+				}
+			}
+			if (this.options.clickable) {
+				if (this.options.clickable === true) {
+					this.clickableElements = [this.element];
+				}
+				else {
+					this.clickableElements = Dropzone.getElements(this.options.clickable,
+						"clickable");
+				}
+			}
+			this.init();
+		}
+
+		Dropzone.prototype.getAcceptedFiles = function () {
+			var file, _i, _len, _ref, _results;
+			_ref = this.files;
+			_results = [];
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				file = _ref[_i];
+				if (file.accepted) {
+					_results.push(file);
+				}
+			}
+			return _results;
+		};
+
+		Dropzone.prototype.getRejectedFiles = function () {
+			var file, _i, _len, _ref, _results;
+			_ref = this.files;
+			_results = [];
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				file = _ref[_i];
+				if (!file.accepted) {
+					_results.push(file);
+				}
+			}
+			return _results;
+		};
+
+		Dropzone.prototype.getFilesWithStatus = function (status) {
+			var file, _i, _len, _ref, _results;
+			_ref = this.files;
+			_results = [];
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				file = _ref[_i];
+				if (file.status === status) {
+					_results.push(file);
+				}
+			}
+			return _results;
+		};
+
+		Dropzone.prototype.getQueuedFiles = function () {
+			return this.getFilesWithStatus(Dropzone.QUEUED);
+		};
+
+		Dropzone.prototype.getUploadingFiles = function () {
+			return this.getFilesWithStatus(Dropzone.UPLOADING);
+		};
+
+		Dropzone.prototype.getAddedFiles = function () {
+			return this.getFilesWithStatus(Dropzone.ADDED);
+		};
+
+		Dropzone.prototype.getActiveFiles = function () {
+			var file, _i, _len, _ref, _results;
+			_ref = this.files;
+			_results = [];
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				file = _ref[_i];
+				if (file.status === Dropzone.UPLOADING || file.status === Dropzone.QUEUED) {
+					_results.push(file);
+				}
+			}
+			return _results;
+		};
+
+		Dropzone.prototype.init = function () {
+			var eventName, noPropagation, setupHiddenFileInput, _i, _len, _ref,
+				_ref1;
+			if (this.element.tagName === "form") {
+				this.element.setAttribute("enctype", "multipart/form-data");
+			}
+			if (this.element.classList.contains("dropzone") && !this.element.querySelector(
+					".dz-message")) {
+				this.element.appendChild(Dropzone.createElement(
+					"<div class=\"dz-default dz-message\"><span>" + this.options.dictDefaultMessage +
+					"</span></div>"));
+			}
+			if (this.clickableElements.length) {
+				setupHiddenFileInput = (function (_this) {
+					return function () {
+						if (_this.hiddenFileInput) {
+							_this.hiddenFileInput.parentNode.removeChild(_this.hiddenFileInput);
+						}
+						_this.hiddenFileInput = document.createElement("input");
+						_this.hiddenFileInput.setAttribute("type", "file");
+						if ((_this.options.maxFiles == null) || _this.options.maxFiles > 1) {
+							_this.hiddenFileInput.setAttribute("multiple", "multiple");
+						}
+						_this.hiddenFileInput.className = "dz-hidden-input";
+						if (_this.options.acceptedFiles != null) {
+							_this.hiddenFileInput.setAttribute("accept", _this.options.acceptedFiles);
+						}
+						if (_this.options.capture != null) {
+							_this.hiddenFileInput.setAttribute("capture", _this.options.capture);
+						}
+						_this.hiddenFileInput.style.visibility = "hidden";
+						_this.hiddenFileInput.style.position = "absolute";
+						_this.hiddenFileInput.style.top = "0";
+						_this.hiddenFileInput.style.left = "0";
+						_this.hiddenFileInput.style.height = "0";
+						_this.hiddenFileInput.style.width = "0";
+						document.querySelector(_this.options.hiddenInputContainer).appendChild(
+							_this.hiddenFileInput);
+						return _this.hiddenFileInput.addEventListener("change", function () {
+							var file, files, _i, _len;
+							files = _this.hiddenFileInput.files;
+							if (files.length) {
+								for (_i = 0, _len = files.length; _i < _len; _i++) {
+									file = files[_i];
+									_this.addFile(file);
+								}
+							}
+							_this.emit("addedfiles", files);
+							return setupHiddenFileInput();
+						});
+					};
+				})(this);
+				setupHiddenFileInput();
+			}
+			this.URL = (_ref = window.URL) != null ? _ref : window.webkitURL;
+			_ref1 = this.events;
+			for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+				eventName = _ref1[_i];
+				this.on(eventName, this.options[eventName]);
+			}
+			this.on("uploadprogress", (function (_this) {
+				return function () {
+					return _this.updateTotalUploadProgress();
+				};
+			})(this));
+			this.on("removedfile", (function (_this) {
+				return function () {
+					return _this.updateTotalUploadProgress();
+				};
+			})(this));
+			this.on("canceled", (function (_this) {
+				return function (file) {
+					return _this.emit("complete", file);
+				};
+			})(this));
+			this.on("complete", (function (_this) {
+				return function (file) {
+					if (_this.getAddedFiles().length === 0 && _this.getUploadingFiles()
+						.length === 0 && _this.getQueuedFiles().length === 0) {
+						return setTimeout((function () {
+							return _this.emit("queuecomplete");
+						}), 0);
+					}
+				};
+			})(this));
+			noPropagation = function (e) {
+				e.stopPropagation();
+				if (e.preventDefault) {
+					return e.preventDefault();
+				}
+				else {
+					return e.returnValue = false;
+				}
+			};
+			this.listeners = [{
+				element: this.element,
+				events: {
+					"dragstart": (function (_this) {
+						return function (e) {
+							return _this.emit("dragstart", e);
+						};
+					})(this),
+					"dragenter": (function (_this) {
+						return function (e) {
+							noPropagation(e);
+							return _this.emit("dragenter", e);
+						};
+					})(this),
+					"dragover": (function (_this) {
+						return function (e) {
+							var efct;
+							try {
+								efct = e.dataTransfer.effectAllowed;
+							}
+							catch (_error) {}
+							e.dataTransfer.dropEffect = 'move' === efct || 'linkMove' ===
+								efct ? 'move' : 'copy';
+							noPropagation(e);
+							return _this.emit("dragover", e);
+						};
+					})(this),
+					"dragleave": (function (_this) {
+						return function (e) {
+							return _this.emit("dragleave", e);
+						};
+					})(this),
+					"drop": (function (_this) {
+						return function (e) {
+							noPropagation(e);
+							return _this.drop(e);
+						};
+					})(this),
+					"dragend": (function (_this) {
+						return function (e) {
+							return _this.emit("dragend", e);
+						};
+					})(this)
+				}
+			}];
+			this.clickableElements.forEach((function (_this) {
+				return function (clickableElement) {
+					return _this.listeners.push({
+						element: clickableElement,
+						events: {
+							"click": function (evt) {
+								if ((clickableElement !== _this.element) || (evt.target ===
+										_this.element || Dropzone.elementInside(evt.target, _this.element
+											.querySelector(".dz-message")))) {
+									_this.hiddenFileInput.click();
+								}
+								return true;
+							}
+						}
+					});
+				};
+			})(this));
+			this.enable();
+			return this.options.init.call(this);
+		};
+
+		Dropzone.prototype.destroy = function () {
+			var _ref;
+			this.disable();
+			this.removeAllFiles(true);
+			if ((_ref = this.hiddenFileInput) != null ? _ref.parentNode : void 0) {
+				this.hiddenFileInput.parentNode.removeChild(this.hiddenFileInput);
+				this.hiddenFileInput = null;
+			}
+			delete this.element.dropzone;
+			return Dropzone.instances.splice(Dropzone.instances.indexOf(this), 1);
+		};
+
+		Dropzone.prototype.updateTotalUploadProgress = function () {
+			var activeFiles, file, totalBytes, totalBytesSent, totalUploadProgress,
+				_i, _len, _ref;
+			totalBytesSent = 0;
+			totalBytes = 0;
+			activeFiles = this.getActiveFiles();
+			if (activeFiles.length) {
+				_ref = this.getActiveFiles();
+				for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+					file = _ref[_i];
+					totalBytesSent += file.upload.bytesSent;
+					totalBytes += file.upload.total;
+				}
+				totalUploadProgress = 100 * totalBytesSent / totalBytes;
+			}
+			else {
+				totalUploadProgress = 100;
+			}
+			return this.emit("totaluploadprogress", totalUploadProgress, totalBytes,
+				totalBytesSent);
+		};
+
+		Dropzone.prototype._getParamName = function (n) {
+			if (typeof this.options.paramName === "function") {
+				return this.options.paramName(n);
+			}
+			else {
+				return "" + this.options.paramName + (this.options.uploadMultiple ? "[" +
+					n + "]" : "");
+			}
+		};
+
+		Dropzone.prototype.getFallbackForm = function () {
+			var existingFallback, fields, fieldsString, form;
+			if (existingFallback = this.getExistingFallback()) {
+				return existingFallback;
+			}
+			fieldsString = "<div class=\"dz-fallback\">";
+			if (this.options.dictFallbackText) {
+				fieldsString += "<p>" + this.options.dictFallbackText + "</p>";
+			}
+			fieldsString += "<input type=\"file\" name=\"" + (this._getParamName(0)) +
+				"\" " + (this.options.uploadMultiple ? 'multiple="multiple"' : void 0) +
+				" /><input type=\"submit\" value=\"Upload!\"></div>";
+			fields = Dropzone.createElement(fieldsString);
+			if (this.element.tagName !== "FORM") {
+				form = Dropzone.createElement("<form action=\"" + this.options.url +
+					"\" enctype=\"multipart/form-data\" method=\"" + this.options.method +
+					"\"></form>");
+				form.appendChild(fields);
+			}
+			else {
+				this.element.setAttribute("enctype", "multipart/form-data");
+				this.element.setAttribute("method", this.options.method);
+			}
+			return form != null ? form : fields;
+		};
+
+		Dropzone.prototype.getExistingFallback = function () {
+			var fallback, getFallback, tagName, _i, _len, _ref;
+			getFallback = function (elements) {
+				var el, _i, _len;
+				for (_i = 0, _len = elements.length; _i < _len; _i++) {
+					el = elements[_i];
+					if (/(^| )fallback($| )/.test(el.className)) {
+						return el;
+					}
+				}
+			};
+			_ref = ["div", "form"];
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				tagName = _ref[_i];
+				if (fallback = getFallback(this.element.getElementsByTagName(tagName))) {
+					return fallback;
+				}
+			}
+		};
+
+		Dropzone.prototype.setupEventListeners = function () {
+			var elementListeners, event, listener, _i, _len, _ref, _results;
+			_ref = this.listeners;
+			_results = [];
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				elementListeners = _ref[_i];
+				_results.push((function () {
+					var _ref1, _results1;
+					_ref1 = elementListeners.events;
+					_results1 = [];
+					for (event in _ref1) {
+						listener = _ref1[event];
+						_results1.push(elementListeners.element.addEventListener(event,
+							listener, false));
+					}
+					return _results1;
+				})());
+			}
+			return _results;
+		};
+
+		Dropzone.prototype.removeEventListeners = function () {
+			var elementListeners, event, listener, _i, _len, _ref, _results;
+			_ref = this.listeners;
+			_results = [];
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				elementListeners = _ref[_i];
+				_results.push((function () {
+					var _ref1, _results1;
+					_ref1 = elementListeners.events;
+					_results1 = [];
+					for (event in _ref1) {
+						listener = _ref1[event];
+						_results1.push(elementListeners.element.removeEventListener(event,
+							listener, false));
+					}
+					return _results1;
+				})());
+			}
+			return _results;
+		};
+
+		Dropzone.prototype.disable = function () {
+			var file, _i, _len, _ref, _results;
+			this.clickableElements.forEach(function (element) {
+				return element.classList.remove("dz-clickable");
+			});
+			this.removeEventListeners();
+			_ref = this.files;
+			_results = [];
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				file = _ref[_i];
+				_results.push(this.cancelUpload(file));
+			}
+			return _results;
+		};
+
+		Dropzone.prototype.enable = function () {
+			this.clickableElements.forEach(function (element) {
+				return element.classList.add("dz-clickable");
+			});
+			return this.setupEventListeners();
+		};
+
+		Dropzone.prototype.filesize = function (size) {
+			var cutoff, i, selectedSize, selectedUnit, unit, units, _i, _len;
+			selectedSize = 0;
+			selectedUnit = "b";
+			if (size > 0) {
+				units = ['TB', 'GB', 'MB', 'KB', 'b'];
+				for (i = _i = 0, _len = units.length; _i < _len; i = ++_i) {
+					unit = units[i];
+					cutoff = Math.pow(this.options.filesizeBase, 4 - i) / 10;
+					if (size >= cutoff) {
+						selectedSize = size / Math.pow(this.options.filesizeBase, 4 - i);
+						selectedUnit = unit;
+						break;
+					}
+				}
+				selectedSize = Math.round(10 * selectedSize) / 10;
+			}
+			return "<strong>" + selectedSize + "</strong> " + selectedUnit;
+		};
+
+		Dropzone.prototype._updateMaxFilesReachedClass = function () {
+			if ((this.options.maxFiles != null) && this.getAcceptedFiles().length >=
+				this.options.maxFiles) {
+				if (this.getAcceptedFiles().length === this.options.maxFiles) {
+					this.emit('maxfilesreached', this.files);
+				}
+				return this.element.classList.add("dz-max-files-reached");
+			}
+			else {
+				return this.element.classList.remove("dz-max-files-reached");
+			}
+		};
+
+		Dropzone.prototype.drop = function (e) {
+			var files, items;
+			if (!e.dataTransfer) {
+				return;
+			}
+			this.emit("drop", e);
+			files = e.dataTransfer.files;
+			this.emit("addedfiles", files);
+			if (files.length) {
+				items = e.dataTransfer.items;
+				if (items && items.length && (items[0].webkitGetAsEntry != null)) {
+					this._addFilesFromItems(items);
+				}
+				else {
+					this.handleFiles(files);
+				}
+			}
+		};
+
+		Dropzone.prototype.paste = function (e) {
+			var items, _ref;
+			if ((e != null ? (_ref = e.clipboardData) != null ? _ref.items : void 0 :
+					void 0) == null) {
+				return;
+			}
+			this.emit("paste", e);
+			items = e.clipboardData.items;
+			if (items.length) {
+				return this._addFilesFromItems(items);
+			}
+		};
+
+		Dropzone.prototype.handleFiles = function (files) {
+			var file, _i, _len, _results;
+			_results = [];
+			for (_i = 0, _len = files.length; _i < _len; _i++) {
+				file = files[_i];
+				_results.push(this.addFile(file));
+			}
+			return _results;
+		};
+
+		Dropzone.prototype._addFilesFromItems = function (items) {
+			var entry, item, _i, _len, _results;
+			_results = [];
+			for (_i = 0, _len = items.length; _i < _len; _i++) {
+				item = items[_i];
+				if ((item.webkitGetAsEntry != null) && (entry = item.webkitGetAsEntry())) {
+					if (entry.isFile) {
+						_results.push(this.addFile(item.getAsFile()));
+					}
+					else if (entry.isDirectory) {
+						_results.push(this._addFilesFromDirectory(entry, entry.name));
+					}
+					else {
+						_results.push(void 0);
+					}
+				}
+				else if (item.getAsFile != null) {
+					if ((item.kind == null) || item.kind === "file") {
+						_results.push(this.addFile(item.getAsFile()));
+					}
+					else {
+						_results.push(void 0);
+					}
+				}
+				else {
+					_results.push(void 0);
+				}
+			}
+			return _results;
+		};
+
+		Dropzone.prototype._addFilesFromDirectory = function (directory, path) {
+			var dirReader, entriesReader;
+			dirReader = directory.createReader();
+			entriesReader = (function (_this) {
+				return function (entries) {
+					var entry, _i, _len;
+					for (_i = 0, _len = entries.length; _i < _len; _i++) {
+						entry = entries[_i];
+						if (entry.isFile) {
+							entry.file(function (file) {
+								if (_this.options.ignoreHiddenFiles && file.name.substring(0,
+										1) === '.') {
+									return;
+								}
+								file.fullPath = "" + path + "/" + file.name;
+								return _this.addFile(file);
+							});
+						}
+						else if (entry.isDirectory) {
+							_this._addFilesFromDirectory(entry, "" + path + "/" + entry.name);
+						}
+					}
+				};
+			})(this);
+			return dirReader.readEntries(entriesReader, function (error) {
+				return typeof console !== "undefined" && console !== null ? typeof console
+					.log === "function" ? console.log(error) : void 0 : void 0;
+			});
+		};
+
+		Dropzone.prototype.accept = function (file, done) {
+			if (file.size > this.options.maxFilesize * 1024 * 1024) {
+				return done(this.options.dictFileTooBig.replace("{{filesize}}", Math.round(
+					file.size / 1024 / 10.24) / 100).replace("{{maxFilesize}}", this.options
+					.maxFilesize));
+			}
+			else if (!Dropzone.isValidFile(file, this.options.acceptedFiles)) {
+				return done(this.options.dictInvalidFileType);
+			}
+			else if ((this.options.maxFiles != null) && this.getAcceptedFiles().length >=
+				this.options.maxFiles) {
+				done(this.options.dictMaxFilesExceeded.replace("{{maxFiles}}", this.options
+					.maxFiles));
+				return this.emit("maxfilesexceeded", file);
+			}
+			else {
+				return this.options.accept.call(this, file, done);
+			}
+		};
+
+		Dropzone.prototype.addFile = function (file) {
+			file.upload = {
+				progress: 0,
+				total: file.size,
+				bytesSent: 0
+			};
+			this.files.push(file);
+			file.status = Dropzone.ADDED;
+			this.emit("addedfile", file);
+			this._enqueueThumbnail(file);
+			return this.accept(file, (function (_this) {
+				return function (error) {
+					if (error) {
+						file.accepted = false;
+						_this._errorProcessing([file], error);
+					}
+					else {
+						file.accepted = true;
+						if (_this.options.autoQueue) {
+							_this.enqueueFile(file);
+						}
+					}
+					return _this._updateMaxFilesReachedClass();
+				};
+			})(this));
+		};
+
+		Dropzone.prototype.enqueueFiles = function (files) {
+			var file, _i, _len;
+			for (_i = 0, _len = files.length; _i < _len; _i++) {
+				file = files[_i];
+				this.enqueueFile(file);
+			}
+			return null;
+		};
+
+		Dropzone.prototype.enqueueFile = function (file) {
+			if (file.status === Dropzone.ADDED && file.accepted === true) {
+				file.status = Dropzone.QUEUED;
+				if (this.options.autoProcessQueue) {
+					return setTimeout(((function (_this) {
+						return function () {
+							return _this.processQueue();
+						};
+					})(this)), 0);
+				}
+			}
+			else {
+				throw new Error(
+					"This file can't be queued because it has already been processed or was rejected."
+				);
+			}
+		};
+
+		Dropzone.prototype._thumbnailQueue = [];
+
+		Dropzone.prototype._processingThumbnail = false;
+
+		Dropzone.prototype._enqueueThumbnail = function (file) {
+			if (this.options.createImageThumbnails && file.type.match(/image.*/) &&
+				file.size <= this.options.maxThumbnailFilesize * 1024 * 1024) {
+				this._thumbnailQueue.push(file);
+				return setTimeout(((function (_this) {
+					return function () {
+						return _this._processThumbnailQueue();
+					};
+				})(this)), 0);
+			}
+		};
+
+		Dropzone.prototype._processThumbnailQueue = function () {
+			if (this._processingThumbnail || this._thumbnailQueue.length === 0) {
+				return;
+			}
+			this._processingThumbnail = true;
+			return this.createThumbnail(this._thumbnailQueue.shift(), (function (
+				_this) {
+				return function () {
+					_this._processingThumbnail = false;
+					return _this._processThumbnailQueue();
+				};
+			})(this));
+		};
+
+		Dropzone.prototype.removeFile = function (file) {
+			if (file.status === Dropzone.UPLOADING) {
+				this.cancelUpload(file);
+			}
+			this.files = without(this.files, file);
+			this.emit("removedfile", file);
+			if (this.files.length === 0) {
+				return this.emit("reset");
+			}
+		};
+
+		Dropzone.prototype.removeAllFiles = function (cancelIfNecessary) {
+			var file, _i, _len, _ref;
+			if (cancelIfNecessary == null) {
+				cancelIfNecessary = false;
+			}
+			_ref = this.files.slice();
+			for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+				file = _ref[_i];
+				if (file.status !== Dropzone.UPLOADING || cancelIfNecessary) {
+					this.removeFile(file);
+				}
+			}
+			return null;
+		};
+
+		Dropzone.prototype.createThumbnail = function (file, callback) {
+			var fileReader;
+			fileReader = new FileReader;
+			fileReader.onload = (function (_this) {
+				return function () {
+					if (file.type === "image/svg+xml") {
+						_this.emit("thumbnail", file, fileReader.result);
+						if (callback != null) {
+							callback();
+						}
+						return;
+					}
+					return _this.createThumbnailFromUrl(file, fileReader.result,
+						callback);
+				};
+			})(this);
+			return fileReader.readAsDataURL(file);
+		};
+
+		Dropzone.prototype.createThumbnailFromUrl = function (file, imageUrl,
+			callback, crossOrigin) {
+			var img;
+			img = document.createElement("img");
+			if (crossOrigin) {
+				img.crossOrigin = crossOrigin;
+			}
+			img.onload = (function (_this) {
+				return function () {
+					var canvas, ctx, resizeInfo, thumbnail, _ref, _ref1, _ref2, _ref3;
+					file.width = img.width;
+					file.height = img.height;
+					resizeInfo = _this.options.resize.call(_this, file);
+					if (resizeInfo.trgWidth == null) {
+						resizeInfo.trgWidth = resizeInfo.optWidth;
+					}
+					if (resizeInfo.trgHeight == null) {
+						resizeInfo.trgHeight = resizeInfo.optHeight;
+					}
+					canvas = document.createElement("canvas");
+					ctx = canvas.getContext("2d");
+					canvas.width = resizeInfo.trgWidth;
+					canvas.height = resizeInfo.trgHeight;
+					drawImageIOSFix(ctx, img, (_ref = resizeInfo.srcX) != null ? _ref :
+						0, (_ref1 = resizeInfo.srcY) != null ? _ref1 : 0, resizeInfo.srcWidth,
+						resizeInfo.srcHeight, (_ref2 = resizeInfo.trgX) != null ? _ref2 :
+						0, (_ref3 = resizeInfo.trgY) != null ? _ref3 : 0, resizeInfo.trgWidth,
+						resizeInfo.trgHeight);
+					thumbnail = canvas.toDataURL("image/png");
+					_this.emit("thumbnail", file, thumbnail);
+					if (callback != null) {
+						return callback();
+					}
+				};
+			})(this);
+			if (callback != null) {
+				img.onerror = callback;
+			}
+			return img.src = imageUrl;
+		};
+
+		Dropzone.prototype.processQueue = function () {
+			var i, parallelUploads, processingLength, queuedFiles;
+			parallelUploads = this.options.parallelUploads;
+			processingLength = this.getUploadingFiles().length;
+			i = processingLength;
+			if (processingLength >= parallelUploads) {
+				return;
+			}
+			queuedFiles = this.getQueuedFiles();
+			if (!(queuedFiles.length > 0)) {
+				return;
+			}
+			if (this.options.uploadMultiple) {
+				return this.processFiles(queuedFiles.slice(0, parallelUploads -
+					processingLength));
+			}
+			else {
+				while (i < parallelUploads) {
+					if (!queuedFiles.length) {
+						return;
+					}
+					this.processFile(queuedFiles.shift());
+					i++;
+				}
+			}
+		};
+
+		Dropzone.prototype.processFile = function (file) {
+			return this.processFiles([file]);
+		};
+
+		Dropzone.prototype.processFiles = function (files) {
+			var file, _i, _len;
+			for (_i = 0, _len = files.length; _i < _len; _i++) {
+				file = files[_i];
+				file.processing = true;
+				file.status = Dropzone.UPLOADING;
+				this.emit("processing", file);
+			}
+			if (this.options.uploadMultiple) {
+				this.emit("processingmultiple", files);
+			}
+			return this.uploadFiles(files);
+		};
+
+		Dropzone.prototype._getFilesWithXhr = function (xhr) {
+			var file, files;
+			return files = (function () {
+				var _i, _len, _ref, _results;
+				_ref = this.files;
+				_results = [];
+				for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+					file = _ref[_i];
+					if (file.xhr === xhr) {
+						_results.push(file);
+					}
+				}
+				return _results;
+			}).call(this);
+		};
+
+		Dropzone.prototype.cancelUpload = function (file) {
+			var groupedFile, groupedFiles, _i, _j, _len, _len1, _ref;
+			if (file.status === Dropzone.UPLOADING) {
+				groupedFiles = this._getFilesWithXhr(file.xhr);
+				for (_i = 0, _len = groupedFiles.length; _i < _len; _i++) {
+					groupedFile = groupedFiles[_i];
+					groupedFile.status = Dropzone.CANCELED;
+				}
+				file.xhr.abort();
+				for (_j = 0, _len1 = groupedFiles.length; _j < _len1; _j++) {
+					groupedFile = groupedFiles[_j];
+					this.emit("canceled", groupedFile);
+				}
+				if (this.options.uploadMultiple) {
+					this.emit("canceledmultiple", groupedFiles);
+				}
+			}
+			else if ((_ref = file.status) === Dropzone.ADDED || _ref === Dropzone.QUEUED) {
+				file.status = Dropzone.CANCELED;
+				this.emit("canceled", file);
+				if (this.options.uploadMultiple) {
+					this.emit("canceledmultiple", [file]);
+				}
+			}
+			if (this.options.autoProcessQueue) {
+				return this.processQueue();
+			}
+		};
+
+		resolveOption = function () {
+			var args, option;
+			option = arguments[0], args = 2 <= arguments.length ? __slice.call(
+				arguments, 1) : [];
+			if (typeof option === 'function') {
+				return option.apply(this, args);
+			}
+			return option;
+		};
+
+		Dropzone.prototype.uploadFile = function (file) {
+			return this.uploadFiles([file]);
+		};
+
+		Dropzone.prototype.uploadFiles = function (files) {
+			var file, formData, handleError, headerName, headerValue, headers, i,
+				input, inputName, inputType, key, method, option, progressObj, response,
+				updateProgress, url, value, xhr, _i, _j, _k, _l, _len, _len1, _len2,
+				_len3, _m, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+			xhr = new XMLHttpRequest();
+			for (_i = 0, _len = files.length; _i < _len; _i++) {
+				file = files[_i];
+				file.xhr = xhr;
+			}
+			method = resolveOption(this.options.method, files);
+			url = resolveOption(this.options.url, files);
+			xhr.open(method, url, true);
+			xhr.withCredentials = !!this.options.withCredentials;
+			response = null;
+			handleError = (function (_this) {
+				return function () {
+					var _j, _len1, _results;
+					_results = [];
+					for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
+						file = files[_j];
+						_results.push(_this._errorProcessing(files, response || _this.options
+							.dictResponseError.replace("{{statusCode}}", xhr.status), xhr));
+					}
+					return _results;
+				};
+			})(this);
+			updateProgress = (function (_this) {
+				return function (e) {
+					var allFilesFinished, progress, _j, _k, _l, _len1, _len2, _len3,
+						_results;
+					if (e != null) {
+						progress = 100 * e.loaded / e.total;
+						for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
+							file = files[_j];
+							file.upload = {
+								progress: progress,
+								total: e.total,
+								bytesSent: e.loaded
+							};
+						}
+					}
+					else {
+						allFilesFinished = true;
+						progress = 100;
+						for (_k = 0, _len2 = files.length; _k < _len2; _k++) {
+							file = files[_k];
+							if (!(file.upload.progress === 100 && file.upload.bytesSent ===
+									file.upload.total)) {
+								allFilesFinished = false;
+							}
+							file.upload.progress = progress;
+							file.upload.bytesSent = file.upload.total;
+						}
+						if (allFilesFinished) {
+							return;
+						}
+					}
+					_results = [];
+					for (_l = 0, _len3 = files.length; _l < _len3; _l++) {
+						file = files[_l];
+						_results.push(_this.emit("uploadprogress", file, progress, file.upload
+							.bytesSent));
+					}
+					return _results;
+				};
+			})(this);
+			xhr.onload = (function (_this) {
+				return function (e) {
+					var _ref;
+					if (files[0].status === Dropzone.CANCELED) {
+						return;
+					}
+					if (xhr.readyState !== 4) {
+						return;
+					}
+					response = xhr.responseText;
+					if (xhr.getResponseHeader("content-type") && ~xhr.getResponseHeader(
+							"content-type").indexOf("application/json")) {
+						try {
+							response = JSON.parse(response);
+						}
+						catch (_error) {
+							e = _error;
+							response = "Invalid JSON response from server.";
+						}
+					}
+					updateProgress();
+					if (!((200 <= (_ref = xhr.status) && _ref < 300))) {
+						return handleError();
+					}
+					else {
+						return _this._finished(files, response, e);
+					}
+				};
+			})(this);
+			xhr.onerror = (function (_this) {
+				return function () {
+					if (files[0].status === Dropzone.CANCELED) {
+						return;
+					}
+					return handleError();
+				};
+			})(this);
+			progressObj = (_ref = xhr.upload) != null ? _ref : xhr;
+			progressObj.onprogress = updateProgress;
+			headers = {
+				"Accept": "application/json",
+				"Cache-Control": "no-cache",
+				"X-Requested-With": "XMLHttpRequest"
+			};
+			if (this.options.headers) {
+				extend(headers, this.options.headers);
+			}
+			for (headerName in headers) {
+				headerValue = headers[headerName];
+				if (headerValue) {
+					xhr.setRequestHeader(headerName, headerValue);
+				}
+			}
+			formData = new FormData();
+			if (this.options.params) {
+				_ref1 = this.options.params;
+				for (key in _ref1) {
+					value = _ref1[key];
+					formData.append(key, value);
+				}
+			}
+			for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
+				file = files[_j];
+				this.emit("sending", file, xhr, formData);
+			}
+			if (this.options.uploadMultiple) {
+				this.emit("sendingmultiple", files, xhr, formData);
+			}
+			if (this.element.tagName === "FORM") {
+				_ref2 = this.element.querySelectorAll("input, textarea, select, button");
+				for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+					input = _ref2[_k];
+					inputName = input.getAttribute("name");
+					inputType = input.getAttribute("type");
+					if (input.tagName === "SELECT" && input.hasAttribute("multiple")) {
+						_ref3 = input.options;
+						for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+							option = _ref3[_l];
+							if (option.selected) {
+								formData.append(inputName, option.value);
+							}
+						}
+					}
+					else if (!inputType || ((_ref4 = inputType.toLowerCase()) !==
+							"checkbox" && _ref4 !== "radio") || input.checked) {
+						formData.append(inputName, input.value);
+					}
+				}
+			}
+			for (i = _m = 0, _ref5 = files.length - 1; 0 <= _ref5 ? _m <= _ref5 : _m >=
+				_ref5; i = 0 <= _ref5 ? ++_m : --_m) {
+				formData.append(this._getParamName(i), files[i], files[i].name);
+			}
+			return this.submitRequest(xhr, formData, files);
+		};
+
+		Dropzone.prototype.submitRequest = function (xhr, formData, files) {
+			return xhr.send(formData);
+		};
+
+		Dropzone.prototype._finished = function (files, responseText, e) {
+			var file, _i, _len;
+			for (_i = 0, _len = files.length; _i < _len; _i++) {
+				file = files[_i];
+				file.status = Dropzone.SUCCESS;
+				this.emit("success", file, responseText, e);
+				this.emit("complete", file);
+			}
+			if (this.options.uploadMultiple) {
+				this.emit("successmultiple", files, responseText, e);
+				this.emit("completemultiple", files);
+			}
+			if (this.options.autoProcessQueue) {
+				return this.processQueue();
+			}
+		};
+
+		Dropzone.prototype._errorProcessing = function (files, message, xhr) {
+			var file, _i, _len;
+			for (_i = 0, _len = files.length; _i < _len; _i++) {
+				file = files[_i];
+				file.status = Dropzone.ERROR;
+				this.emit("error", file, message, xhr);
+				this.emit("complete", file);
+			}
+			if (this.options.uploadMultiple) {
+				this.emit("errormultiple", files, message, xhr);
+				this.emit("completemultiple", files);
+			}
+			if (this.options.autoProcessQueue) {
+				return this.processQueue();
+			}
+		};
+
+		return Dropzone;
+
+	})(Emitter);
+
+	Dropzone.version = "4.2.0";
+
+	Dropzone.options = {};
+
+	Dropzone.optionsForElement = function (element) {
+		if (element.getAttribute("id")) {
+			return Dropzone.options[camelize(element.getAttribute("id"))];
+		}
+		else {
+			return void 0;
+		}
+	};
+
+	Dropzone.instances = [];
+
+	Dropzone.forElement = function (element) {
+		if (typeof element === "string") {
+			element = document.querySelector(element);
+		}
+		if ((element != null ? element.dropzone : void 0) == null) {
+			throw new Error(
+				"No Dropzone found for given element. This is probably because you're trying to access it before Dropzone had the time to initialize. Use the `init` option to setup any additional observers on your Dropzone."
+			);
+		}
+		return element.dropzone;
+	};
+
+	Dropzone.autoDiscover = true;
+
+	Dropzone.discover = function () {
+		var checkElements, dropzone, dropzones, _i, _len, _results;
+		if (document.querySelectorAll) {
+			dropzones = document.querySelectorAll(".dropzone");
+		}
+		else {
+			dropzones = [];
+			checkElements = function (elements) {
+				var el, _i, _len, _results;
+				_results = [];
+				for (_i = 0, _len = elements.length; _i < _len; _i++) {
+					el = elements[_i];
+					if (/(^| )dropzone($| )/.test(el.className)) {
+						_results.push(dropzones.push(el));
+					}
+					else {
+						_results.push(void 0);
+					}
+				}
+				return _results;
+			};
+			checkElements(document.getElementsByTagName("div"));
+			checkElements(document.getElementsByTagName("form"));
+		}
+		_results = [];
+		for (_i = 0, _len = dropzones.length; _i < _len; _i++) {
+			dropzone = dropzones[_i];
+			if (Dropzone.optionsForElement(dropzone) !== false) {
+				_results.push(new Dropzone(dropzone));
+			}
+			else {
+				_results.push(void 0);
+			}
+		}
+		return _results;
+	};
+
+	Dropzone.blacklistedBrowsers = [/opera.*Macintosh.*version\/12/i];
+
+	Dropzone.isBrowserSupported = function () {
+		var capableBrowser, regex, _i, _len, _ref;
+		capableBrowser = true;
+		if (window.File && window.FileReader && window.FileList && window.Blob &&
+			window.FormData && document.querySelector) {
+			if (!("classList" in document.createElement("a"))) {
+				capableBrowser = false;
+			}
+			else {
+				_ref = Dropzone.blacklistedBrowsers;
+				for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+					regex = _ref[_i];
+					if (regex.test(navigator.userAgent)) {
+						capableBrowser = false;
+						continue;
+					}
+				}
+			}
+		}
+		else {
+			capableBrowser = false;
+		}
+		return capableBrowser;
+	};
+
+	without = function (list, rejectedItem) {
+		var item, _i, _len, _results;
+		_results = [];
+		for (_i = 0, _len = list.length; _i < _len; _i++) {
+			item = list[_i];
+			if (item !== rejectedItem) {
+				_results.push(item);
+			}
+		}
+		return _results;
+	};
+
+	camelize = function (str) {
+		return str.replace(/[\-_](\w)/g, function (match) {
+			return match.charAt(1).toUpperCase();
+		});
+	};
+
+	Dropzone.createElement = function (string) {
+		var div;
+		div = document.createElement("div");
+		div.innerHTML = string;
+		return div.childNodes[0];
+	};
+
+	Dropzone.elementInside = function (element, container) {
+		if (element === container) {
+			return true;
+		}
+		while (element = element.parentNode) {
+			if (element === container) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	Dropzone.getElement = function (el, name) {
+		var element;
+		if (typeof el === "string") {
+			element = document.querySelector(el);
+		}
+		else if (el.nodeType != null) {
+			element = el;
+		}
+		if (element == null) {
+			throw new Error("Invalid `" + name +
+				"` option provided. Please provide a CSS selector or a plain HTML element."
+			);
+		}
+		return element;
+	};
+
+	Dropzone.getElements = function (els, name) {
+		var e, el, elements, _i, _j, _len, _len1, _ref;
+		if (els instanceof Array) {
+			elements = [];
+			try {
+				for (_i = 0, _len = els.length; _i < _len; _i++) {
+					el = els[_i];
+					elements.push(this.getElement(el, name));
+				}
+			}
+			catch (_error) {
+				e = _error;
+				elements = null;
+			}
+		}
+		else if (typeof els === "string") {
+			elements = [];
+			_ref = document.querySelectorAll(els);
+			for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+				el = _ref[_j];
+				elements.push(el);
+			}
+		}
+		else if (els.nodeType != null) {
+			elements = [els];
+		}
+		if (!((elements != null) && elements.length)) {
+			throw new Error("Invalid `" + name +
+				"` option provided. Please provide a CSS selector, a plain HTML element or a list of those."
+			);
+		}
+		return elements;
+	};
+
+	Dropzone.confirm = function (question, accepted, rejected) {
+		if (window.confirm(question)) {
+			return accepted();
+		}
+		else if (rejected != null) {
+			return rejected();
+		}
+	};
+
+	Dropzone.isValidFile = function (file, acceptedFiles) {
+		var baseMimeType, mimeType, validType, _i, _len;
+		if (!acceptedFiles) {
+			return true;
+		}
+		acceptedFiles = acceptedFiles.split(",");
+		mimeType = file.type;
+		baseMimeType = mimeType.replace(/\/.*$/, "");
+		for (_i = 0, _len = acceptedFiles.length; _i < _len; _i++) {
+			validType = acceptedFiles[_i];
+			validType = validType.trim();
+			if (validType.charAt(0) === ".") {
+				if (file.name.toLowerCase().indexOf(validType.toLowerCase(), file.name.length -
+						validType.length) !== -1) {
+					return true;
+				}
+			}
+			else if (/\/\*$/.test(validType)) {
+				if (baseMimeType === validType.replace(/\/.*$/, "")) {
+					return true;
+				}
+			}
+			else {
+				if (mimeType === validType) {
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+
+	if (typeof jQuery !== "undefined" && jQuery !== null) {
+		jQuery.fn.dropzone = function (options) {
+			return this.each(function () {
+				return new Dropzone(this, options);
+			});
+		};
+	}
+
+	if (typeof module !== "undefined" && module !== null) {
+		module.exports = Dropzone;
+	}
+	else {
+		window.Dropzone = Dropzone;
+	}
+
+	Dropzone.ADDED = "added";
+
+	Dropzone.QUEUED = "queued";
+
+	Dropzone.ACCEPTED = Dropzone.QUEUED;
+
+	Dropzone.UPLOADING = "uploading";
+
+	Dropzone.PROCESSING = Dropzone.UPLOADING;
+
+	Dropzone.CANCELED = "canceled";
+
+	Dropzone.ERROR = "error";
+
+	Dropzone.SUCCESS = "success";
+
+
+	/*
+
+	Bugfix for iOS 6 and 7
+	Source: http://stackoverflow.com/questions/11929099/html5-canvas-drawimage-ratio-bug-ios
+	based on the work of https://github.com/stomita/ios-imagefile-megapixel
+	 */
+
+	detectVerticalSquash = function (img) {
+		var alpha, canvas, ctx, data, ey, ih, iw, py, ratio, sy;
+		iw = img.naturalWidth;
+		ih = img.naturalHeight;
+		canvas = document.createElement("canvas");
+		canvas.width = 1;
+		canvas.height = ih;
+		ctx = canvas.getContext("2d");
+		ctx.drawImage(img, 0, 0);
+		data = ctx.getImageData(0, 0, 1, ih).data;
+		sy = 0;
+		ey = ih;
+		py = ih;
+		while (py > sy) {
+			alpha = data[(py - 1) * 4 + 3];
+			if (alpha === 0) {
+				ey = py;
+			}
+			else {
+				sy = py;
+			}
+			py = (ey + sy) >> 1;
+		}
+		ratio = py / ih;
+		if (ratio === 0) {
+			return 1;
+		}
+		else {
+			return ratio;
+		}
+	};
+
+	drawImageIOSFix = function (ctx, img, sx, sy, sw, sh, dx, dy, dw, dh) {
+		var vertSquashRatio;
+		vertSquashRatio = detectVerticalSquash(img);
+		return ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh / vertSquashRatio);
+	};
+
+
+	/*
+	 * contentloaded.js
+	 *
+	 * Author: Diego Perini (diego.perini at gmail.com)
+	 * Summary: cross-browser wrapper for DOMContentLoaded
+	 * Updated: 20101020
+	 * License: MIT
+	 * Version: 1.2
+	 *
+	 * URL:
+	 * http://javascript.nwbox.com/ContentLoaded/
+	 * http://javascript.nwbox.com/ContentLoaded/MIT-LICENSE
+	 */
+
+	contentLoaded = function (win, fn) {
+		var add, doc, done, init, poll, pre, rem, root, top;
+		done = false;
+		top = true;
+		doc = win.document;
+		root = doc.documentElement;
+		add = (doc.addEventListener ? "addEventListener" : "attachEvent");
+		rem = (doc.addEventListener ? "removeEventListener" : "detachEvent");
+		pre = (doc.addEventListener ? "" : "on");
+		init = function (e) {
+			if (e.type === "readystatechange" && doc.readyState !== "complete") {
+				return;
+			}
+			(e.type === "load" ? win : doc)[rem](pre + e.type, init, false);
+			if (!done && (done = true)) {
+				return fn.call(win, e.type || e);
+			}
+		};
+		poll = function () {
+			var e;
+			try {
+				root.doScroll("left");
+			}
+			catch (_error) {
+				e = _error;
+				setTimeout(poll, 50);
+				return;
+			}
+			return init("poll");
+		};
+		if (doc.readyState !== "complete") {
+			if (doc.createEventObject && root.doScroll) {
+				try {
+					top = !win.frameElement;
+				}
+				catch (_error) {}
+				if (top) {
+					poll();
+				}
+			}
+			doc[add](pre + "DOMContentLoaded", init, false);
+			doc[add](pre + "readystatechange", init, false);
+			return win[add](pre + "load", init, false);
+		}
+	};
+
+	Dropzone._autoDiscoverFunction = function () {
+		if (Dropzone.autoDiscover) {
+			return Dropzone.discover();
+		}
+	};
+
+	contentLoaded(window, Dropzone._autoDiscoverFunction);
+
+}).call(this);
+;/*!
+ * jQuery Cookie Plugin v1.4.1
+ * https://github.com/carhartl/jquery-cookie
+ *
+ * Copyright 2006, 2014 Klaus Hartl
+ * Released under the MIT license
+ */
+(function (factory) {
+	if (typeof define === 'function' && define.amd) {
+		// AMD (Register as an anonymous module)
+		define(['jquery'], factory);
+	}
+	else if (typeof exports === 'object') {
+		// Node/CommonJS
+		module.exports = factory(require('jquery'));
+	}
+	else {
+		// Browser globals
+		factory(jQuery);
+	}
+}(function ($) {
+
+	var pluses = /\+/g;
+
+	function encode(s) {
+		return config.raw ? s : encodeURIComponent(s);
+	}
+
+	function decode(s) {
+		return config.raw ? s : decodeURIComponent(s);
+	}
+
+	function stringifyCookieValue(value) {
+		return encode(config.json ? JSON.stringify(value) : String(value));
+	}
+
+	function parseCookieValue(s) {
+		if (s.indexOf('"') === 0) {
+			// This is a quoted cookie as according to RFC2068, unescape...
+			s = s.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+		}
+
+		try {
+			// Replace server-side written pluses with spaces.
+			// If we can't decode the cookie, ignore it, it's unusable.
+			// If we can't parse the cookie, ignore it, it's unusable.
+			s = decodeURIComponent(s.replace(pluses, ' '));
+			return config.json ? JSON.parse(s) : s;
+		}
+		catch (e) {}
+	}
+
+	function read(s, converter) {
+		var value = config.raw ? s : parseCookieValue(s);
+		return $.isFunction(converter) ? converter(value) : value;
+	}
+
+	var config = $.cookie = function (key, value, options) {
+
+		// Write
+
+		if (arguments.length > 1 && !$.isFunction(value)) {
+			options = $.extend({}, config.defaults, options);
+
+			if (typeof options.expires === 'number') {
+				var days = options.expires,
+					t = options.expires = new Date();
+				t.setMilliseconds(t.getMilliseconds() + days * 864e+5);
+			}
+
+			return (document.cookie = [
+				encode(key), '=', stringifyCookieValue(value),
+				options.expires ? '; expires=' + options.expires.toUTCString() : '', // use expires attribute, max-age is not supported by IE
+				options.path ? '; path=' + options.path : '',
+				options.domain ? '; domain=' + options.domain : '',
+				options.secure ? '; secure' : ''
+			].join(''));
+		}
+
+		// Read
+
+		var result = key ? undefined : {},
+			// To prevent the for loop in the first place assign an empty array
+			// in case there are no cookies at all. Also prevents odd result when
+			// calling $.cookie().
+			cookies = document.cookie ? document.cookie.split('; ') : [],
+			i = 0,
+			l = cookies.length;
+
+		for (; i < l; i++) {
+			var parts = cookies[i].split('='),
+				name = decode(parts.shift()),
+				cookie = parts.join('=');
+
+			if (key === name) {
+				// If second argument (value) is a function it's a converter...
+				result = read(cookie, value);
+				break;
+			}
+
+			// Prevent storing a cookie that we couldn't decode.
+			if (!key && (cookie = read(cookie)) !== undefined) {
+				result[name] = cookie;
+			}
+		}
+
+		return result;
+	};
+
+	config.defaults = {};
+
+	$.removeCookie = function (key, options) {
+		// Must not alter options, thus extending a fresh object...
+		$.cookie(key, '', $.extend({}, options, {
+			expires: -1
+		}));
+		return !$.cookie(key);
+	};
+
+}));
+;/*
+ * Viewport - jQuery selectors for finding elements in viewport
+ *
+ * Copyright (c) 2008-2009 Mika Tuupola
+ *
+ * Licensed under the MIT license:
+ *   http://www.opensource.org/licenses/mit-license.php
+ *
+ * Project home:
+ *  http://www.appelsiini.net/projects/viewport
+ *
+ */
+(function($) {
+
+    $.belowthefold = function(element, settings) {
+        var fold = $(window).height() + $(window).scrollTop();
+        return fold <= $(element).offset().top - settings.threshold;
+    };
+
+    $.abovethetop = function(element, settings) {
+        var top = $(window).scrollTop();
+        return top >= $(element).offset().top + $(element).height() - settings.threshold;
+    };
+
+    $.rightofscreen = function(element, settings) {
+        var fold = $(window).width() + $(window).scrollLeft();
+        return fold <= $(element).offset().left - settings.threshold;
+    };
+
+    $.leftofscreen = function(element, settings) {
+        var left = $(window).scrollLeft();
+        return left >= $(element).offset().left + $(element).width() - settings.threshold;
+    };
+
+    $.inviewport = function(element, settings) {
+        return !$.rightofscreen(element, settings) && !$.leftofscreen(element, settings) && !$.belowthefold(element, settings) && !$.abovethetop(element, settings);
+    };
+
+    $.extend($.expr[':'], {
+        "below-the-fold": function(a, i, m) {
+            return $.belowthefold(a, {threshold : 0});
+        },
+        "above-the-top": function(a, i, m) {
+            return $.abovethetop(a, {threshold : 0});
+        },
+        "left-of-screen": function(a, i, m) {
+            return $.leftofscreen(a, {threshold : 0});
+        },
+        "right-of-screen": function(a, i, m) {
+            return $.rightofscreen(a, {threshold : 0});
+        },
+        "in-viewport": function(a, i, m) {
+            return $.inviewport(a, {threshold : 0});
+        }
+    });
+
+
+})(jQuery);
+;/*!
+ * modernizr v3.2.0
+ * Build http://modernizr.com/download?-history-localstorage-sessionstorage-touchevents-dontmin
+ *
+ * Copyright (c)
+ *  Faruk Ates
+ *  Paul Irish
+ *  Alex Sexton
+ *  Ryan Seddon
+ *  Patrick Kettner
+ *  Stu Cox
+ *  Richard Herrera
+
+ * MIT License
+ */
+
+/*
+ * Modernizr tests which native CSS3 and HTML5 features are available in the
+ * current UA and makes the results available to you in two ways: as properties on
+ * a global `Modernizr` object, and as classes on the `<html>` element. This
+ * information allows you to progressively enhance your pages with a granular level
+ * of control over the experience.
+ */
+
 ;
+(function (window, document, undefined) {
+  var classes = [];
+
+
+  var tests = [];
+
+
+  /**
+   *
+   * ModernizrProto is the constructor for Modernizr
+   *
+   * @class
+   * @access public
+   */
+
+  var ModernizrProto = {
+    // The current version, dummy
+    _version: '3.2.0',
+
+    // Any settings that don't work as separate modules
+    // can go in here as configuration.
+    _config: {
+      'classPrefix': '',
+      'enableClasses': true,
+      'enableJSClass': true,
+      'usePrefixes': true
+    },
+
+    // Queue of tests
+    _q: [],
+
+    // Stub these for people who are listening
+    on: function (test, cb) {
+      // I don't really think people should do this, but we can
+      // safe guard it a bit.
+      // -- NOTE:: this gets WAY overridden in src/addTest for actual async tests.
+      // This is in case people listen to synchronous tests. I would leave it out,
+      // but the code to *disallow* sync tests in the real version of this
+      // function is actually larger than this.
+      var self = this;
+      setTimeout(function () {
+        cb(self[test]);
+      }, 0);
+    },
+
+    addTest: function (name, fn, options) {
+      tests.push({
+        name: name,
+        fn: fn,
+        options: options
+      });
+    },
+
+    addAsyncTest: function (fn) {
+      tests.push({
+        name: null,
+        fn: fn
+      });
+    }
+  };
+
+
+
+  // Fake some of Object.create so we can force non test results to be non "own" properties.
+  var Modernizr = function () {};
+  Modernizr.prototype = ModernizrProto;
+
+  // Leak modernizr globally when you `require` it rather than force it here.
+  // Overwrite name so constructor name is nicer :D
+  Modernizr = new Modernizr();
+
+
+  /*!
+  {
+    "name": "History API",
+    "property": "history",
+    "caniuse": "history",
+    "tags": ["history"],
+    "authors": ["Hay Kranen", "Alexander Farkas"],
+    "notes": [{
+      "name": "W3C Spec",
+      "href": "http://www.w3.org/TR/html51/browsers.html#the-history-interface"
+    }, {
+      "name": "MDN documentation",
+      "href": "https://developer.mozilla.org/en-US/docs/Web/API/window.history"
+    }],
+    "polyfills": ["historyjs", "html5historyapi"]
+  }
+  !*/
+  /* DOC
+  Detects support for the History API for manipulating the browser session history.
+  */
+
+  Modernizr.addTest('history', function () {
+    // Issue #733
+    // The stock browser on Android 2.2 & 2.3, and 4.0.x returns positive on history support
+    // Unfortunately support is really buggy and there is no clean way to detect
+    // these bugs, so we fall back to a user agent sniff :(
+    var ua = navigator.userAgent;
+
+    // We only want Android 2 and 4.0, stock browser, and not Chrome which identifies
+    // itself as 'Mobile Safari' as well, nor Windows Phone (issue #1471).
+    if ((ua.indexOf('Android 2.') !== -1 ||
+        (ua.indexOf('Android 4.0') !== -1)) &&
+      ua.indexOf('Mobile Safari') !== -1 &&
+      ua.indexOf('Chrome') === -1 &&
+      ua.indexOf('Windows Phone') === -1) {
+      return false;
+    }
+
+    // Return the regular check
+    return (window.history && 'pushState' in window.history);
+  });
+
+  /*!
+  {
+    "name": "Local Storage",
+    "property": "localstorage",
+    "caniuse": "namevalue-storage",
+    "tags": ["storage"],
+    "knownBugs": [],
+    "notes": [],
+    "warnings": [],
+    "polyfills": [
+      "joshuabell-polyfill",
+      "cupcake",
+      "storagepolyfill",
+      "amplifyjs",
+      "yui-cacheoffline"
+    ]
+  }
+  !*/
+
+  // In FF4, if disabled, window.localStorage should === null.
+
+  // Normally, we could not test that directly and need to do a
+  //   `('localStorage' in window) && ` test first because otherwise Firefox will
+  //   throw bugzil.la/365772 if cookies are disabled
+
+  // Also in iOS5 Private Browsing mode, attempting to use localStorage.setItem
+  // will throw the exception:
+  //   QUOTA_EXCEEDED_ERROR DOM Exception 22.
+  // Peculiarly, getItem and removeItem calls do not throw.
+
+  // Because we are forced to try/catch this, we'll go aggressive.
+
+  // Just FWIW: IE8 Compat mode supports these features completely:
+  //   www.quirksmode.org/dom/html5.html
+  // But IE8 doesn't support either with local files
+
+  Modernizr.addTest('localstorage', function () {
+    var mod = 'modernizr';
+    try {
+      localStorage.setItem(mod, mod);
+      localStorage.removeItem(mod);
+      return true;
+    }
+    catch (e) {
+      return false;
+    }
+  });
+
+  /*!
+  {
+    "name": "Session Storage",
+    "property": "sessionstorage",
+    "tags": ["storage"],
+    "polyfills": ["joshuabell-polyfill", "cupcake", "sessionstorage"]
+  }
+  !*/
+
+  // Because we are forced to try/catch this, we'll go aggressive.
+
+  // Just FWIW: IE8 Compat mode supports these features completely:
+  //   www.quirksmode.org/dom/html5.html
+  // But IE8 doesn't support either with local files
+  Modernizr.addTest('sessionstorage', function () {
+    var mod = 'modernizr';
+    try {
+      sessionStorage.setItem(mod, mod);
+      sessionStorage.removeItem(mod);
+      return true;
+    }
+    catch (e) {
+      return false;
+    }
+  });
+
+
+  /**
+   * is returns a boolean if the typeof an obj is exactly type.
+   *
+   * @access private
+   * @function is
+   * @param {*} obj - A thing we want to check the type of
+   * @param {string} type - A string to compare the typeof against
+   * @returns {boolean}
+   */
+
+  function is(obj, type) {
+    return typeof obj === type;
+  };
+
+  /**
+   * Run through all tests and detect their support in the current UA.
+   *
+   * @access private
+   */
+
+  function testRunner() {
+    var featureNames;
+    var feature;
+    var aliasIdx;
+    var result;
+    var nameIdx;
+    var featureName;
+    var featureNameSplit;
+
+    for (var featureIdx in tests) {
+      if (tests.hasOwnProperty(featureIdx)) {
+        featureNames = [];
+        feature = tests[featureIdx];
+        // run the test, throw the return value into the Modernizr,
+        // then based on that boolean, define an appropriate className
+        // and push it into an array of classes we'll join later.
+        //
+        // If there is no name, it's an 'async' test that is run,
+        // but not directly added to the object. That should
+        // be done with a post-run addTest call.
+        if (feature.name) {
+          featureNames.push(feature.name.toLowerCase());
+
+          if (feature.options && feature.options.aliases && feature.options.aliases
+            .length) {
+            // Add all the aliases into the names list
+            for (aliasIdx = 0; aliasIdx < feature.options.aliases.length; aliasIdx++) {
+              featureNames.push(feature.options.aliases[aliasIdx].toLowerCase());
+            }
+          }
+        }
+
+        // Run the test, or use the raw value if it's not a function
+        result = is(feature.fn, 'function') ? feature.fn() : feature.fn;
+
+
+        // Set each of the names on the Modernizr object
+        for (nameIdx = 0; nameIdx < featureNames.length; nameIdx++) {
+          featureName = featureNames[nameIdx];
+          // Support dot properties as sub tests. We don't do checking to make sure
+          // that the implied parent tests have been added. You must call them in
+          // order (either in the test, or make the parent test a dependency).
+          //
+          // Cap it to TWO to make the logic simple and because who needs that kind of subtesting
+          // hashtag famous last words
+          featureNameSplit = featureName.split('.');
+
+          if (featureNameSplit.length === 1) {
+            Modernizr[featureNameSplit[0]] = result;
+          }
+          else {
+            // cast to a Boolean, if not one already
+            /* jshint -W053 */
+            if (Modernizr[featureNameSplit[0]] && !(Modernizr[
+                featureNameSplit[0]] instanceof Boolean)) {
+              Modernizr[featureNameSplit[0]] = new Boolean(Modernizr[
+                featureNameSplit[0]]);
+            }
+
+            Modernizr[featureNameSplit[0]][featureNameSplit[1]] = result;
+          }
+
+          classes.push((result ? '' : 'no-') + featureNameSplit.join('-'));
+        }
+      }
+    }
+  };
+
+  /**
+   * docElement is a convenience wrapper to grab the root element of the document
+   *
+   * @access private
+   * @returns {HTMLElement|SVGElement} The root element of the document
+   */
+
+  var docElement = document.documentElement;
+
+
+  /**
+   * A convenience helper to check if the document we are running in is an SVG document
+   *
+   * @access private
+   * @returns {boolean}
+   */
+
+  var isSVG = docElement.nodeName.toLowerCase() === 'svg';
+
+
+  /**
+   * setClasses takes an array of class names and adds them to the root element
+   *
+   * @access private
+   * @function setClasses
+   * @param {string[]} classes - Array of class names
+   */
+
+  // Pass in an and array of class names, e.g.:
+  //  ['no-webp', 'borderradius', ...]
+  function setClasses(classes) {
+    var className = docElement.className;
+    var classPrefix = Modernizr._config.classPrefix || '';
+
+    if (isSVG) {
+      className = className.baseVal;
+    }
+
+    // Change `no-js` to `js` (independently of the `enableClasses` option)
+    // Handle classPrefix on this too
+    if (Modernizr._config.enableJSClass) {
+      var reJS = new RegExp('(^|\\s)' + classPrefix + 'no-js(\\s|$)');
+      className = className.replace(reJS, '$1' + classPrefix + 'js$2');
+    }
+
+    if (Modernizr._config.enableClasses) {
+      // Add the new classes
+      className += ' ' + classPrefix + classes.join(' ' + classPrefix);
+      isSVG ? docElement.className.baseVal = className : docElement.className =
+        className;
+    }
+
+  }
+
+  ;
+
+  /**
+   * List of property values to set for css tests. See ticket #21
+   * http://git.io/vUGl4
+   *
+   * @memberof Modernizr
+   * @name Modernizr._prefixes
+   * @optionName Modernizr._prefixes
+   * @optionProp prefixes
+   * @access public
+   * @example
+   *
+   * Modernizr._prefixes is the internal list of prefixes that we test against
+   * inside of things like [prefixed](#modernizr-prefixed) and [prefixedCSS](#-code-modernizr-prefixedcss). It is simply
+   * an array of kebab-case vendor prefixes you can use within your code.
+   *
+   * Some common use cases include
+   *
+   * Generating all possible prefixed version of a CSS property
+   * ```js
+   * var rule = Modernizr._prefixes.join('transform: rotate(20deg); ');
+   *
+   * rule === 'transform: rotate(20deg); webkit-transform: rotate(20deg); moz-transform: rotate(20deg); o-transform: rotate(20deg); ms-transform: rotate(20deg);'
+   * ```
+   *
+   * Generating all possible prefixed version of a CSS value
+   * ```js
+   * rule = 'display:' +  Modernizr._prefixes.join('flex; display:') + 'flex';
+   *
+   * rule === 'display:flex; display:-webkit-flex; display:-moz-flex; display:-o-flex; display:-ms-flex; display:flex'
+   * ```
+   */
+
+  var prefixes = (ModernizrProto._config.usePrefixes ?
+    ' -webkit- -moz- -o- -ms- '.split(' ') : []);
+
+  // expose these for the plugin API. Look in the source for how to join() them against your input
+  ModernizrProto._prefixes = prefixes;
+
+
+
+  /**
+   * createElement is a convenience wrapper around document.createElement. Since we
+   * use createElement all over the place, this allows for (slightly) smaller code
+   * as well as abstracting away issues with creating elements in contexts other than
+   * HTML documents (e.g. SVG documents).
+   *
+   * @access private
+   * @function createElement
+   * @returns {HTMLElement|SVGElement} An HTML or SVG element
+   */
+
+  function createElement() {
+    if (typeof document.createElement !== 'function') {
+      // This is the case in IE7, where the type of createElement is "object".
+      // For this reason, we cannot call apply() as Object is not a Function.
+      return document.createElement(arguments[0]);
+    }
+    else if (isSVG) {
+      return document.createElementNS.call(document,
+        'http://www.w3.org/2000/svg', arguments[0]);
+    }
+    else {
+      return document.createElement.apply(document, arguments);
+    }
+  }
+
+  ;
+
+  /**
+   * getBody returns the body of a document, or an element that can stand in for
+   * the body if a real body does not exist
+   *
+   * @access private
+   * @function getBody
+   * @returns {HTMLElement|SVGElement} Returns the real body of a document, or an
+   * artificially created element that stands in for the body
+   */
+
+  function getBody() {
+    // After page load injecting a fake body doesn't work so check if body exists
+    var body = document.body;
+
+    if (!body) {
+      // Can't use the real body create a fake one.
+      body = createElement(isSVG ? 'svg' : 'body');
+      body.fake = true;
+    }
+
+    return body;
+  }
+
+  ;
+
+  /**
+   * injectElementWithStyles injects an element with style element and some CSS rules
+   *
+   * @access private
+   * @function injectElementWithStyles
+   * @param {string} rule - String representing a css rule
+   * @param {function} callback - A function that is used to test the injected element
+   * @param {number} [nodes] - An integer representing the number of additional nodes you want injected
+   * @param {string[]} [testnames] - An array of strings that are used as ids for the additional nodes
+   * @returns {boolean}
+   */
+
+  function injectElementWithStyles(rule, callback, nodes, testnames) {
+    var mod = 'modernizr';
+    var style;
+    var ret;
+    var node;
+    var docOverflow;
+    var div = createElement('div');
+    var body = getBody();
+
+    if (parseInt(nodes, 10)) {
+      // In order not to give false positives we create a node for each test
+      // This also allows the method to scale for unspecified uses
+      while (nodes--) {
+        node = createElement('div');
+        node.id = testnames ? testnames[nodes] : mod + (nodes + 1);
+        div.appendChild(node);
+      }
+    }
+
+    style = createElement('style');
+    style.type = 'text/css';
+    style.id = 's' + mod;
+
+    // IE6 will false positive on some tests due to the style element inside the test div somehow interfering offsetHeight, so insert it into body or fakebody.
+    // Opera will act all quirky when injecting elements in documentElement when page is served as xml, needs fakebody too. #270
+    (!body.fake ? div : body).appendChild(style);
+    body.appendChild(div);
+
+    if (style.styleSheet) {
+      style.styleSheet.cssText = rule;
+    }
+    else {
+      style.appendChild(document.createTextNode(rule));
+    }
+    div.id = mod;
+
+    if (body.fake) {
+      //avoid crashing IE8, if background image is used
+      body.style.background = '';
+      //Safari 5.13/5.1.4 OSX stops loading if ::-webkit-scrollbar is used and scrollbars are visible
+      body.style.overflow = 'hidden';
+      docOverflow = docElement.style.overflow;
+      docElement.style.overflow = 'hidden';
+      docElement.appendChild(body);
+    }
+
+    ret = callback(div, rule);
+    // If this is done after page load we don't want to remove the body so check if body exists
+    if (body.fake) {
+      body.parentNode.removeChild(body);
+      docElement.style.overflow = docOverflow;
+      // Trigger layout so kinetic scrolling isn't disabled in iOS6+
+      docElement.offsetHeight;
+    }
+    else {
+      div.parentNode.removeChild(div);
+    }
+
+    return !!ret;
+
+  }
+
+  ;
+
+  /**
+   * testStyles injects an element with style element and some CSS rules
+   *
+   * @memberof Modernizr
+   * @name Modernizr.testStyles
+   * @optionName Modernizr.testStyles()
+   * @optionProp testStyles
+   * @access public
+   * @function testStyles
+   * @param {string} rule - String representing a css rule
+   * @param {function} callback - A function that is used to test the injected element
+   * @param {number} [nodes] - An integer representing the number of additional nodes you want injected
+   * @param {string[]} [testnames] - An array of strings that are used as ids for the additional nodes
+   * @returns {boolean}
+   * @example
+   *
+   * `Modernizr.testStyles` takes a CSS rule and injects it onto the current page
+   * along with (possibly multiple) DOM elements. This lets you check for features
+   * that can not be detected by simply checking the [IDL](https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Interface_development_guide/IDL_interface_rules).
+   *
+   * ```js
+   * Modernizr.testStyles('#modernizr { width: 9px; color: papayawhip; }', function(elem, rule) {
+   *   // elem is the first DOM node in the page (by default #modernizr)
+   *   // rule is the first argument you supplied - the CSS rule in string form
+   *
+   *   addTest('widthworks', elem.style.width === '9px')
+   * });
+   * ```
+   *
+   * If your test requires multiple nodes, you can include a third argument
+   * indicating how many additional div elements to include on the page. The
+   * additional nodes are injected as children of the `elem` that is returned as
+   * the first argument to the callback.
+   *
+   * ```js
+   * Modernizr.testStyles('#modernizr {width: 1px}; #modernizr2 {width: 2px}', function(elem) {
+   *   document.getElementById('modernizr').style.width === '1px'; // true
+   *   document.getElementById('modernizr2').style.width === '2px'; // true
+   *   elem.firstChild === document.getElementById('modernizr2'); // true
+   * }, 1);
+   * ```
+   *
+   * By default, all of the additional elements have an ID of `modernizr[n]`, where
+   * `n` is its index (e.g. the first additional, second overall is `#modernizr2`,
+   * the second additional is `#modernizr3`, etc.).
+   * If you want to have more meaningful IDs for your function, you can provide
+   * them as the fourth argument, as an array of strings
+   *
+   * ```js
+   * Modernizr.testStyles('#foo {width: 10px}; #bar {height: 20px}', function(elem) {
+   *   elem.firstChild === document.getElementById('foo'); // true
+   *   elem.lastChild === document.getElementById('bar'); // true
+   * }, 2, ['foo', 'bar']);
+   * ```
+   *
+   */
+
+  var testStyles = ModernizrProto.testStyles = injectElementWithStyles;
+
+  /*!
+  {
+    "name": "Touch Events",
+    "property": "touchevents",
+    "caniuse" : "touch",
+    "tags": ["media", "attribute"],
+    "notes": [{
+      "name": "Touch Events spec",
+      "href": "http://www.w3.org/TR/2013/WD-touch-events-20130124/"
+    }],
+    "warnings": [
+      "Indicates if the browser supports the Touch Events spec, and does not necessarily reflect a touchscreen device"
+    ],
+    "knownBugs": [
+      "False-positive on some configurations of Nokia N900",
+      "False-positive on some BlackBerry 6.0 builds – https://github.com/Modernizr/Modernizr/issues/372#issuecomment-3112695"
+    ]
+  }
+  !*/
+  /* DOC
+  Indicates if the browser supports the W3C Touch Events API.
+
+  This *does not* necessarily reflect a touchscreen device:
+
+  * Older touchscreen devices only emulate mouse events
+  * Modern IE touch devices implement the Pointer Events API instead: use `Modernizr.pointerevents` to detect support for that
+  * Some browsers & OS setups may enable touch APIs when no touchscreen is connected
+  * Future browsers may implement other event models for touch interactions
+
+  See this article: [You Can't Detect A Touchscreen](http://www.stucox.com/blog/you-cant-detect-a-touchscreen/).
+
+  It's recommended to bind both mouse and touch/pointer events simultaneously – see [this HTML5 Rocks tutorial](http://www.html5rocks.com/en/mobile/touchandmouse/).
+
+  This test will also return `true` for Firefox 4 Multitouch support.
+  */
+
+  // Chrome (desktop) used to lie about its support on this, but that has since been rectified: http://crbug.com/36415
+  Modernizr.addTest('touchevents', function () {
+    var bool;
+    if (('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch) {
+      bool = true;
+    }
+    else {
+      var query = ['@media (', prefixes.join('touch-enabled),('),
+        'heartz', ')', '{#modernizr{top:9px;position:absolute}}'
+      ].join('');
+      testStyles(query, function (node) {
+        bool = node.offsetTop === 9;
+      });
+    }
+    return bool;
+  });
+
+
+  // Run each test
+  testRunner();
+
+  // Remove the "no-js" class if it exists
+  setClasses(classes);
+
+  delete ModernizrProto.addTest;
+  delete ModernizrProto.addAsyncTest;
+
+  // Run the things that are supposed to run after the tests
+  for (var i = 0; i < Modernizr._q.length; i++) {
+    Modernizr._q[i]();
+  }
+
+  // Leak Modernizr namespace
+  window.Modernizr = Modernizr;
+
+
+  ;
+
+})(window, document);
+;(function ($) {
+	Dropzone.autoDiscover = false;
+
+	function dropzoneController(elem, options) {
+		this.element = $(elem);
+
+		var self = this;
+
+		this.settings = $.extend({
+			endpoint: this.element.data('endpoint')
+		}, options || {});
+
+		this.dropzone = undefined;
+
+		this.start = function () {
+			this.dropzone = new Dropzone(this.element[0], {
+				url: self.settings.endpoint,
+				paramName: 'uploadedFile',
+				uploadMultiple: false,
+				maxFiles: 1,
+
+				init: function () {
+
+					this.on('maxfilesexceeded', function (file) {
+						this.removeAllFiles();
+						this.addFile(file);
+					});
+
+					this.on("processing", function () {
+						self.element.addClass('loading');
+					});
+
+					this.on("success", function (dzfile, body) {
+						var response = body.response;
+						var s3file = response.url;
+						var img = self.element.parent().find('img').first();
+						img.attr('src', s3file);
+						if (img.data('inViewPort')) {
+							img.data('inViewPort').fitElements();
+						}
+						self.element.removeClass('loading');
+					});
+
+					this.on("complete", function (file) {
+						this.removeFile(file);
+					});
+				}
+			});
+		};
+
+		this.stop = function () {};
+	}
+
+	$.fn.dropzoneController = GetJQueryPlugin('dropzoneController', dropzoneController);
+})(jQuery);
+;var options = {
+	'coverResize': false,
+	'geometry': {
+		'enabled': true,
+		breakpoints: [{
+			className: 'digitopia-xsmall',
+			maxWidth: 768
+		}, {
+			className: 'digitopia-small',
+			maxWidth: 992
+		}, {
+			className: 'digitopia-medium',
+			maxWidth: 1200
+		}, {
+			className: 'digitopia-large',
+			maxWidth: undefined
+		}, ],
+	},
+	'hijax': {
+		'enabled': false,
+		'disableScrollAnimation': true
+	},
+};
+$('body').digitopiaController(options);

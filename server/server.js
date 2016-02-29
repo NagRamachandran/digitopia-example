@@ -9,6 +9,7 @@ app.locals.pretty = true;
 
 // expose the running environment name to jade
 app.locals.env = app.get('env');
+app.locals.getUploadForProperty = require('./lib/getUploadForProperty');
 
 // setup component storage for s3
 var ds = loopback.createDataSource({

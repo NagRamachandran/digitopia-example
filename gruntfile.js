@@ -11,10 +11,14 @@ module.exports = function (grunt) {
 	var jsFiles = [
 		'node_modules/jquery/dist/jquery.js',
 		'node_modules/bootstrap/dist/js/bootstrap.js',
+		'node_modules/digitopia/dist/js/digitopia.js',
+		'assets/vendor/*.js',
 		'assets/js/*.js'
 	];
 
 	var cssFiles = [
+		'node_modules/digitopia/dist/css/digitopia.css',
+		'assets/vendor/*.css',
 		'working/css/*.css',
 		'assets/css/*.css'
 	];
@@ -99,5 +103,12 @@ module.exports = function (grunt) {
 		'concat',
 		'uglify',
 		'cssmin'
+	]);
+
+	grunt.registerTask('devel', [
+		'less',
+		'stylus',
+		'concat',
+		'watch'
 	]);
 };

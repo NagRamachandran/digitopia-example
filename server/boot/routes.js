@@ -31,7 +31,12 @@ module.exports = function (server) {
   });
 
   router.get('/upload', getCurrentUser(), ensureLoggedIn(), function (req, res, next) {
-    res.render('pages/upload');
+    var ctx = server.loopback.getCurrentContext();
+    var currentUser = ctx.get('currentUser');
+
+    res.render('pages/upload', {
+      user: currentUser
+    });
   });
 
   server.use(router);

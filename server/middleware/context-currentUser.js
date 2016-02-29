@@ -6,14 +6,17 @@ module.exports = function () {
 			return next();
 		}
 
-		req.app.models.MyUser.findById(req.accessToken.userId, function (err, user) {
+		req.app.models.MyUser.findById(req.accessToken.userId, {
+			include: ['uploads']
+		}, function (err, user) {
 
 			if (err) {
 				return next(err);
 			}
 
 			if (!user) {
-				//user not found for accessToken, which is odd.
+				// user not found for accessToken, which is very odd.
+				// behave like they are not logged in
 				return next();
 			}
 

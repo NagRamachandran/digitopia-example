@@ -7,6 +7,10 @@ block seo
 block content
 	h3.
 		Upload Photo
-	form(action="/api/MyUsers/me/upload/photo" method="post" enctype="multipart/form-data") 
-		input(type="file" name="uploadedFile")
-		input(type="submit")
+
+	#pages-upload
+		.profile-photo-viewport.text-center(data-jsclass="digitopiaViewport" data-crop="true" data-blowup="true")
+			img(data-jsclass="digitopiaLazyImg" data-lazy-src= getUploadForProperty('photo',user.uploads()))
+			.dropzone(data-jsclass="dropzoneController" data-endpoint="/api/MyUsers/me/upload/photo" data-current-file= getUploadForProperty(photo,user.uploads()) data-width="300" data-height="300")
+				.dz-message.
+					Drop your photo here<br><small>(or click to upload)</small>

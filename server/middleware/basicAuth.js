@@ -1,7 +1,7 @@
 var basicAuth = require('basic-auth');
 
 module.exports = function () {
-	return function basicAuth(req, res, next) {
+	return function basicAuthMiddleware(req, res, next) {
 
 		if (!req.url.match(/\/(api|explorer)\//)) {
 			var user = basicAuth(req);
