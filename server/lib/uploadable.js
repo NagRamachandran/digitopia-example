@@ -147,11 +147,7 @@ module.exports = function uploadable(model, instance, property, ctx, next) {
 			// copy the multipart payload to s3
 			req.params.container = bucket;
 			server.models.Container.upload(req, res, options, function (err, fileObj) {
-				var file;
-				if (!err && fileObj && fileObj.files && fileObj.files.uploadedFile) {
-					file = fileObj.files.uploadedFile[0];
-				}
-				doneWithUpload(err, file);
+				doneWithUpload(err, fileObj.files.uploadedFile[0]);
 			});
 		}
 	}
