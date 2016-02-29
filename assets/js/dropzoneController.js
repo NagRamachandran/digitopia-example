@@ -34,10 +34,8 @@
 						var response = body.response;
 						var s3file = response.url;
 						var img = self.element.parent().find('img').first();
+						img.attr('src', '');
 						img.attr('src', s3file);
-						if (img.data('inViewPort')) {
-							img.data('inViewPort').fitElements();
-						}
 						self.element.removeClass('loading');
 					});
 
