@@ -43,6 +43,7 @@
 						var img = self.element.parent().find('img').first();
 						img.attr('src', '');
 						img.attr('src', s3file);
+						img.data('lazy-src', s3file);
 						self.element.removeClass('loading');
 					});
 

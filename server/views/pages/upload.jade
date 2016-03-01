@@ -15,6 +15,6 @@ block content
 				- var photo = getUploadForProperty('photo',user.uploads())
 				.profile-photo-viewport.text-center(data-jsclass="digitopiaViewport" data-crop="true" data-blowup="true")
 					img(data-jsclass="digitopiaLazyImg" data-lazy-src= photo)
-					.dropzone(data-jsclass="dropzoneController" data-endpoint= endpoint data-current-file= photo)
+					.dropzone(data-jsclass="dropzoneController" data-endpoint= endpoint)
 						.dz-message.
 							Drop your photo here<br><small>(or click to upload)</small>
