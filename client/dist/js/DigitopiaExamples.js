@@ -16886,13 +16886,16 @@ function GetJQueryPlugin(classname,obj) {
 
 })(window, document);
 ;(function ($) {
+	// disable dropzone auto instantiation
 	Dropzone.autoDiscover = false;
 
+	// define dropzoneController
 	function dropzoneController(elem, options) {
 		this.element = $(elem);
 
 		var self = this;
 
+		// get the upload endpoint from the html data-endpoint= tag
 		this.settings = $.extend({
 			endpoint: this.element.data('endpoint')
 		}, options || {});
@@ -16900,6 +16903,7 @@ function GetJQueryPlugin(classname,obj) {
 		this.dropzone = undefined;
 
 		this.start = function () {
+
 			this.dropzone = new Dropzone(this.element[0], {
 				url: self.settings.endpoint,
 				paramName: 'uploadedFile',
@@ -16908,15 +16912,18 @@ function GetJQueryPlugin(classname,obj) {
 
 				init: function () {
 
+					// only allow single file upload
 					this.on('maxfilesexceeded', function (file) {
 						this.removeAllFiles();
 						this.addFile(file);
 					});
 
+					// provide feedback that upload is processing
 					this.on("processing", function () {
 						self.element.addClass('loading');
 					});
 
+					// on success, update the current image in the markup
 					this.on("success", function (dzfile, body) {
 						var response = body.response;
 						var s3file = response.url;
@@ -16926,11 +16933,13 @@ function GetJQueryPlugin(classname,obj) {
 						self.element.removeClass('loading');
 					});
 
+					// remove the thumbnail from the dropzone UI
 					this.on("complete", function (file) {
 						this.removeFile(file);
 					});
 				}
 			});
+
 		};
 
 		this.stop = function () {};
