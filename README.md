@@ -6,16 +6,15 @@ The details of this configuration are discussed on [digitopia](http://blog.digit
 
 ####Installation
 
-git clone https://github.com/mediapolis/digitopia-example.git
+[Download the repository](https://github.com/mediapolis/digitopia-example/archive/master.zip)
 
-cd to the directory
-
+cd digitopia-example
 npm install
 
 to run the app:
 
-AWS_S3_KEY="YOUR KEY" AWS_S3_KEY_ID="YOUR ID" S3_BUCKET="YOUR BUCKET" node .
+AWS_S3_KEY="KEY" AWS_S3_KEY_ID="ID" S3_BUCKET="BUCKET" node .
 
-to run the tests (app needs to be running):
+to run the tests (app needs to be running first):
 
-AWS_S3_KEY="YOUR KEY" AWS_S3_KEY_ID="YOUR ID" S3_BUCKET="YOUR BUCKET" mocha tests/upload.js
+AWS_S3_KEY="KEY" AWS_S3_KEY_ID="ID" S3_BUCKET="BUCKET" mocha tests/upload.js
