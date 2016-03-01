@@ -3701,18 +3701,18 @@ Copyright (c) 2015 Daniel Eden
 body {
   background-color: #eee;
 }
-#pages-upload .profile-photo-viewport {
+#scope-pages-upload .profile-photo-viewport {
   position: relative;
   height: 300px;
 }
-#pages-upload .profile-photo-viewport img {
+#scope-pages-upload .profile-photo-viewport img {
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
   -ms-transition: all 0.5s ease;
   transition: all 0.5s ease;
 }
-#pages-upload .profile-photo-viewport .dropzone {
+#scope-pages-upload .profile-photo-viewport .dropzone {
   position: absolute;
   top: 0px !important;
   width: 100%;
@@ -3727,12 +3727,12 @@ body {
   transition: all 0.5s ease;
   paddding-top: 40%;
 }
-#pages-upload .profile-photo-viewport .dropzone:hover {
+#scope-pages-upload .profile-photo-viewport .dropzone:hover {
   opacity: 0.8;
   -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
   filter: alpha(opacity=80);
 }
-#pages-upload .profile-photo-viewport .loading {
+#scope-pages-upload .profile-photo-viewport .loading {
   opacity: 1;
   -ms-filter: none;
   filter: none;
