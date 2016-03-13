@@ -10,10 +10,6 @@
       "type": "string",
       "required": true
     },
-    "name": {
-      "type": "string",
-      "required": true
-    },
     "type": {
       "type": "string"
     },
@@ -21,9 +17,17 @@
       "type": "string",
       "required": true
     },
-    "uploadedFileName": {
-      "type": "string",
-      "required": true
+    "filename": {
+      "type": "string"
+    },
+    "bucket": {
+      "type": "string"
+    },
+    "key": {
+      "type": "string"
+    },
+    "imageSet": {
+      "type": "object"
     }
   },
   "validations": [],

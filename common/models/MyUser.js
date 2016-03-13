@@ -30,6 +30,14 @@ module.exports = function (MyUser) {
 				discriminator: 'uploadableType'
 			}
 		});
+
+		// MySQL: set type of discriminatior property because default
+		// in jugglingDB is varchar(512) which is too big to index
+		server.models.Upload.dataSource.defineProperty('Upload', 'uploadableType', {
+			type: 'string',
+			length: 30,
+			index: true
+		});
 	});
 
 	// cleanup the uploads before destroying user
@@ -51,16 +59,43 @@ module.exports = function (MyUser) {
 		var loopbackContext = loopback.getCurrentContext();
 		var currentUser = loopbackContext.get('currentUser');
 		var roles = loopbackContext.get('currentUserRoles');
-		uploadable('MyUser', currentUser, property, ctx, function (err, upload) {
+
+		// on Upload save make versions for various UI uses
+		var versions = [{
+			suffix: 'large',
+			quality: 90,
+			maxHeight: 1040,
+			maxWidth: 1040,
+		}, {
+			suffix: 'medium',
+			quality: 90,
+			maxHeight: 780,
+			maxWidth: 780
+		}, {
+			suffix: 'thumb',
+			quality: 90,
+			maxHeight: 320,
+			maxWidth: 320
+		}, {
+			suffix: 'icon',
+			quality: 90,
+			maxWidth: 50,
+			maxHeight: 50,
+			aspect: '1:1'
+		}];
+
+		// process the upload
+		uploadable('MyUser', currentUser, property, ctx, versions, function (err, upload) {
 			return cb(err, upload);
 		});
 	};
 
-	// POST /api/MyUsers/me/upload/photo
-	// requires
-	// 	req.body.url - url to copy file from
-	//  - or -
-	//  req.body.uploadedFile - multipart file upload payload
+	// POST /api/MyUsers/me/upload/:property
+	// property is the use for the upload eg. 'photo' or 'background' etc.
+	// requires:
+	// 		req.body.url - url to copy file from
+	// 		- or -
+	// 		req.body.uploadedFile - multipart file upload payload
 	MyUser.remoteMethod(
 		'upload', {
 			accepts: [{

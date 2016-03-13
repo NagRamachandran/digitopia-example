@@ -11,14 +11,19 @@
     "compression": "^1.0.3",
     "cors": "^2.5.2",
     "digitopia": "git+https://github.com/mediapolis/digitopia.git",
+    "fs": "0.0.2",
     "jade": "^1.11.0",
     "loopback": "^2.22.0",
     "loopback-boot": "^2.6.5",
     "loopback-component-explorer": "^2.1.0",
     "loopback-component-storage": "^1.7.0",
     "loopback-datasource-juggler": "^2.39.0",
+    "mime-types": "^2.1.10",
+    "multiparty": "^4.1.2",
+    "s3-uploader": "^1.1.0",
     "serve-favicon": "^2.0.1",
-    "uuid": "^2.0.1"
+    "uuid": "^2.0.1",
+    "verror": "^1.6.1"
   },
   "devDependencies": {
     "grunt": "^0.4.5",

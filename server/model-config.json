@@ -40,5 +40,9 @@
   "MyUser": {
     "dataSource": "db",
     "public": true
+  },
+  "ImageSet": {
+    "dataSource": "db",
+    "public": true
   }
 }

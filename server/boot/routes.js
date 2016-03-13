@@ -1,5 +1,7 @@
 var getCurrentUser = require('../middleware/context-currentUser');
 var ensureLoggedIn = require('../middleware/context-ensureLoggedIn');
+var getProcessedImage = require('../lib/getProcessedImage');
+var getUploadForProperty = require('../lib/getUploadForProperty');
 
 module.exports = function (server) {
   var router = server.loopback.Router();
@@ -34,9 +36,13 @@ module.exports = function (server) {
     var ctx = server.loopback.getCurrentContext();
     var currentUser = ctx.get('currentUser');
 
+    var orig = getUploadForProperty('photo', currentUser.uploads());
+
+
     res.render('pages/upload', {
       user: currentUser
     });
+
   });
 
   server.use(router);

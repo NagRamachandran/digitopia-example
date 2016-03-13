@@ -8,13 +8,19 @@ block content
 	h3.
 		Upload Photo
 
+	- var photo = getUploadForProperty('photo',user.uploads())
+
 	#scope-pages-upload
 		.row
 			.col-sm-4
 				- var endpoint = "/api/MyUsers/me/upload/photo"
-				- var photo = getUploadForProperty('photo',user.uploads())
 				.profile-photo-viewport.text-center(data-jsclass="digitopiaViewport" data-crop="true" data-blowup="true")
-					img(data-jsclass="digitopiaLazyImg" data-lazy-src= photo)
+					img(data-jsclass="digitopiaLazyImg" data-lazy-src= photo.url)
 					.dropzone(data-jsclass="dropzoneController" data-endpoint= endpoint)
 						.dz-message.
 							Drop your photo here<br><small>(or click to upload)</small>
+
+		if photo.imageSet
+			.row
+				.col-sm-12
+					img(src= photo.imageSet['icon'].url)

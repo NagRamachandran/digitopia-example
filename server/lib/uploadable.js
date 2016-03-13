@@ -1,43 +1,189 @@
+var loopback = require('loopback');
+var server = require('../server');
+var fs = require('fs');
 var uuid = require('uuid');
 var async = require('async');
 var request = require('request');
-var loopback = require('loopback');
-var server = require('../server');
+var multiparty = require('multiparty');
+var mime = require('mime-types');
+var Uploader = require('s3-uploader');
+var VError = require('verror').VError;
+var WError = require('verror').WError;
 
 // where uploads get saved
 var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
+var folder = process.env.S3_FOLDER ? process.env.S3_FOLDER : 'uploads/';
+var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-east-1';
 
-module.exports = function uploadable(model, instance, property, ctx, next) {
+// uploadable
+// ----------
+// upload handler used by models that have 'uploadables' relationship
+// model: the 'from' model
+// instance: the model instance
+// property: the upload property eg: 'photo', 'background' etc.
+// ctx: the context of the request
+// versions: array specifying the resize specs for the upload fileSet
+
+module.exports = function uploadable(model, instance, property, ctx, versions, next) {
 	var loopbackContext = loopback.getCurrentContext();
 	var currentUser = loopbackContext.get('currentUser');
 	var req = ctx.req;
 	var res = ctx.res;
 	var params = req.query.id ? req.query : req.body;
-	var folder = model + '-' + property + '/';
 
+	folder = model + '-' + property + '/';
+
+	// steps for processing the request
 	async.waterfall([
+		getLocalCopy,
 		uploadFile,
-		cleanupOldFileInstance,
-		saveNewFileInstance
+		cleanupOldUploadInstance,
+		saveNewUploadInstance
 	], function (err, results) {
-		next(err, results);
+		if (err) {
+			var e = new WError(err, 'upload failed');
+			console.log(e.toString())
+			return next(e);
+		}
+		// success - back to caller
+		next(null, results);
 	});
 
-	// do the upload to s3
-	function uploadFile(cb) {
-		handleUpload(req, function (err, uploadedFile) {
+	// getLocalCopy: aqcuire the file
+	// if params.url get file from remote location
+	// else if upload save file
+	// callback with path to file
+	function getLocalCopy(cb) {
+		var localCopy;
+		var meta = {};
+
+		// doing a url upload
+		if (params.url) {
+			meta.filename = params.url;
+
+			var theRequest = request
+				.get(params.url)
+				.on('error', function (err) {
+					cb(new VError(err, 'error loading %s', params.url));
+				})
+				.on('response', function (response) {
+					if (response.statusCode === 200 && response.headers['content-type'].match(/^image\//)) {
+
+						// peek at the response to determine the content-type
+
+						meta.type = response.headers['content-type'];
+						var extension = mime.extension(meta.type);
+						localCopy = '/tmp/' + uuid.v4() + '.' + extension;
+
+						// create a write stream to save the file
+						var write = fs.createWriteStream(localCopy)
+							.on('error', function (err) {
+								cb(new VError(err, 'error saving %s', localCopy));
+							})
+							.on('finish', function () {
+								// success - continue processing waterfall
+								cb(null, localCopy, meta);
+							});
+
+						// pipe the request into the file
+						theRequest.pipe(write);
+					}
+					else {
+						cb('could not open url ' + response.statusCode);
+					}
+				});
+		}
+		else {
+
+			// doing a multipart post upload
+
+			var form = new multiparty.Form();
+
+			var foundUploadedFileInUpload = false;
+
+			form.on('error', function (err) {
+				cb(new VError(err, 'error parsing upload'));
+			});
+
+			form.on('part', function (part) {
+				if (part.name !== 'uploadedFile') {
+					return part.resume();
+				}
+
+				foundUploadedFileInUpload = true;
+
+				// build a write stream to save the file
+				meta.filename = part.filename;
+				meta.type = part.headers['content-type'];
+				var extension = mime.extension(meta.type);
+
+				localCopy = '/tmp/' + uuid.v4() + '.' + extension;
+
+				var write = fs.createWriteStream(localCopy);
+
+				write.on('error', function (err) {
+					cb(new VError(err, 'error saving upload %s', localCopy));
+				});
+
+				write.on('finish', function () {
+					// we have the file - continue processing waterfall
+					cb(null, localCopy, meta);
+				});
+
+				part.on('error', function (err) { // read stream error
+					cb(new VError(err, 'error reading upload part %s', part.filename));
+				});
+
+				// pipe the part into the file
+				part.pipe(write);
+			});
+
+			form.on('close', function () {
+				// if we end up here w/o finding the part named "uploadedFile" bail out
+				if (!foundUploadedFileInUpload) {
+					cb(new VError('uploadedFile not found in multipart payload'))
+				}
+			});
+
+			form.parse(req);
+		}
+	};
+
+	// upload the original file to s3
+	// and based on the spec in versions upload as many resized versions as needed
+	function uploadFile(localCopy, meta, cb) {
+		var client = new Uploader(bucket, {
+			aws: {
+				region: region,
+				path: folder,
+				acl: 'public-read',
+				accessKeyId: process.env.AWS_S3_KEY_ID,
+				secretAccessKey: process.env.AWS_S3_KEY
+			},
+			cleanup: {
+				original: true,
+				versions: true
+			},
+			original: {
+				acl: 'public-read'
+			},
+			versions: versions
+		});
+
+		client.upload(localCopy, {}, function (err, images, uploadmeta) {
 			if (err) {
-				var e = new Error('Could not upload file');
-				e.errorCode = 500;
-				e.details = err;
-				return cb(e);
+				cb(new VError(err, 's3 upload failed'));
 			}
-			cb(null, instance, uploadedFile);
+			else {
+				// success - continue processing waterfall
+				cb(null, instance, meta, images);
+			}
 		});
 	}
 
-	// cleanup old File instance before saving new one
-	function cleanupOldFileInstance(instance, uploadedFile, cb) {
+	// cleanup old Upload instance before saving new one
+	// Upload handles removing dangling files from s3
+	function cleanupOldUploadInstance(instance, meta, images, cb) {
 
 		// match any uploads to the instance for same property
 		// also matched any '-cropped' versions of the upload
@@ -57,98 +203,58 @@ module.exports = function uploadable(model, instance, property, ctx, next) {
 
 		server.models.Upload.destroyAll(query, function (err, info) {
 			if (err) {
-				var e = new Error('Error deleting old versions of uploadable');
-				e.errorCode = 500;
-				e.details = err;
-				return cb(e);
+				return cb(new VError(err, 'Error deleting old version of uploadable'));
 			}
 
-			cb(null, instance, uploadedFile);
+			// success - continue processing waterfall
+			cb(null, instance, meta, images);
 		});
 	}
 
-	// create new File instance
-	function saveNewFileInstance(instance, uploadedFile, cb) {
+	// create new Upload instance
+	function saveNewUploadInstance(instance, meta, images, cb) {
+
+		var original;
+		for (var i = 0; i < images.length; i++) {
+			if (images[i].original) {
+				original = images[i];
+			}
+		}
 
 		var fileInstance = instance.uploads.build({
 			'property': property,
-			'name': uploadedFile.name,
-			'uploadedFileName': uploadedFile.uploadedFileName ? uploadedFile.uploadedFileName : uploadedFile.name,
-			'type': uploadedFile.type,
-			'container': uploadedFile.container,
-			'url': 'https://' + uploadedFile.container + '.s3.amazonaws.com/' + uploadedFile.name
+			'filename': meta.filename,
+			'type': meta.type,
+			'url': original.url,
+			'imageSet': getResizedByType(images),
+			'bucket': bucket,
+			'key': original.key
 		});
 
 		fileInstance.save(function (err) {
 			if (err) {
-				var e = new Error('Could not save File');
-				e.errorCode = 500;
-				e.details = err;
-				return cb(e);
+				return cb(new VError(err, 'Error saving Upload instance'));
 			}
+
+			// success - continue processing waterfall
 			cb(null, fileInstance);
 		});
 	}
 
-	// save the upload on s3 using a uuid for the filename
-	// if copying from a url use Container.uploadStream
-	// if peforming an upload use Container.upload
-	function handleUpload(req, doneWithUpload) {
-		var loopbackContext = loopback.getCurrentContext();
-
-		// if we have a url copy the file at the url to s3
-		if (params.url) {
-			var options = {};
-			var parts = params.url.split('.');
-			var extension = parts[parts.length - 1];
-			var newName = uuid.v4() + '.' + extension;
-			newName = folder + newName;
-
-			var result = {
-				name: newName,
-				uploadedFileName: params.url,
-				type: '',
-				container: bucket
-			};
-
-			// create an s3 writer
-			var s3Upload = server.models.Container.uploadStream(bucket, newName, options, null);
-
-			s3Upload.on('error', function (e) {
-				doneWithUpload(e);
-			});
-
-			s3Upload.on('finish', function () {
-				doneWithUpload(null, result);
-			});
-
-			request(params.url).on('response', function (response) {
-				result.type = response.headers['content-type'];
-			}).on('error', function (err) {
-				doneWithUpload(err);
-			}).pipe(s3Upload);
-		}
-		else {
-
-			// receive multipart file upload payload and save to s3
-
-			var options = {};
-
-			// use a uuid for the filename on s3 using the original extension
-			options.getFilename = function (fileInfo, req) {
-				fileInfo.uploadedFileName = fileInfo.name;
-				var origFilename = fileInfo.name;
-				var parts = origFilename.split('.');
-				var extension = parts[parts.length - 1];
-				var newName = uuid.v4() + '.' + extension;
-				return folder + newName;
-			};
-
-			// copy the multipart payload to s3
-			req.params.container = bucket;
-			server.models.Container.upload(req, res, options, function (err, fileObj) {
-				doneWithUpload(err, fileObj.files.uploadedFile[0]);
-			});
-		}
-	}
 };
+
+// reorganize the array we get back from s3-uploader into an object
+// w/properties keyed on the "suffix" for each version defined in versions
+//	{
+//		'large': { url: 's3 url', other metadata },
+//		'medium': { url: 's3 url', other metadata },
+//		'thumb': { url: 's3 url', other metadata }
+//	}
+function getResizedByType(resized) {
+	var types = {};
+	for (var i = 0; i < resized.length; i++) {
+		var type = resized[i].suffix ? resized[i].suffix : 'original';
+		types[type] = resized[i];
+	}
+	return types;
+}
