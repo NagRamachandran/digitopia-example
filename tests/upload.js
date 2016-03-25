@@ -69,7 +69,6 @@ describe('upload', function () {
 			.end(function (err, res) {
 				expect(res.status).to.be(200);
 				token = res.body;
-				//console.log('token:', token);
 				done();
 			});
 	});
@@ -84,7 +83,6 @@ describe('upload', function () {
 			.end(function (err, res) {
 				expect(res.status).to.be(200);
 				token2 = res.body;
-				//console.log('token:', token);
 				done();
 			});
 	});
@@ -142,8 +140,6 @@ describe('upload', function () {
 			.delete('http://localhost:3000/api/MyUsers/me')
 			.end(function (err, res) {
 				expect(res.status).to.be(200);
-				token = res.body;
-				//console.log('token:', token);
 				done();
 			});
 	});
@@ -153,8 +149,6 @@ describe('upload', function () {
 			.delete('http://localhost:3000/api/MyUsers/me')
 			.end(function (err, res) {
 				expect(res.status).to.be(200);
-				token2 = res.body;
-				//console.log('token:', token);
 				done();
 			});
 	});

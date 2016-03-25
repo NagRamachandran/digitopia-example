@@ -15,6 +15,95 @@ var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
 var folder = process.env.S3_FOLDER ? process.env.S3_FOLDER : 'uploads/';
 var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-east-1';
 
+module.exports = function () {
+
+	return function uploadableFactory(MyModel, myModelName, versions) {
+
+		// define polymorphic hasMany relationship from MyModel to Upload
+		MyModel.hasMany(server.models.Upload, {
+			as: 'uploads',
+			'polymorphic': {
+				foreignKey: 'uploadableId',
+				discriminator: 'uploadableType'
+			}
+		});
+
+		// MySQL: set type of discriminatior property because default
+		// in jugglingDB is varchar(512) which is too big to index
+		server.models.Upload.dataSource.defineProperty('Upload', 'uploadableType', {
+			type: 'string',
+			length: 30,
+			index: true
+		});
+
+		// cleanup the uploads before destroying user
+		MyModel.observe('before delete', function (ctx, doneObserving) {
+			MyModel.find({
+				where: ctx.where,
+				include: ['uploads']
+			}, function (err, users) {
+				async.map(users, function (user, cb) {
+					user.uploads.destroyAll(cb);
+				}, function (err, obj) {
+					doneObserving(err);
+				});
+			});
+		});
+
+		// upload a file and store metadata in an Upload instance for MyModel
+		MyModel.upload = function (id, property, ctx, cb) {
+			var loopbackContext = loopback.getCurrentContext();
+
+			// process the upload
+			MyModel.findById(ctx.args.id, function (err, instance) {
+				if (err) {
+					return cb(new VError(err, 'error reading %s.%s', MyModelName, ctx.args.id));
+				}
+				if (!instance) {
+					return cb(new VError(err, 'instance not found %s.%s', MyModelName, ctx.args.id));
+				}
+				uploadable(myModelName, instance, property, ctx, versions, function (err, upload) {
+					return cb(err, upload);
+				});
+			});
+		};
+
+		// POST /api/MyModels/me/upload/:property
+		// property is the use for the upload eg. 'photo' or 'background' etc.
+		// requires:
+		// 		req.body.url - url to copy file from
+		// 		- or -
+		// 		req.body.uploadedFile - multipart file upload payload
+		MyModel.remoteMethod(
+			'upload', {
+				accepts: [{
+					arg: 'id',
+					type: 'number',
+					required: true
+				}, {
+					arg: 'property',
+					type: 'string',
+					required: true
+				}, {
+					arg: 'ctx',
+					type: 'object',
+					http: {
+						source: 'context'
+					}
+				}],
+				http: {
+					path: '/:id/upload/:property',
+					verb: 'post'
+				},
+				returns: {
+					arg: 'response',
+					type: 'object'
+				}
+			}
+		);
+	};
+};
+
 // uploadable
 // ----------
 // upload handler used by models that have 'uploadables' relationship
@@ -24,7 +113,7 @@ var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-east-1';
 // ctx: the context of the request
 // versions: array specifying the resize specs for the upload fileSet
 
-module.exports = function uploadable(model, instance, property, ctx, versions, next) {
+function uploadable(model, instance, property, ctx, versions, next) {
 	var loopbackContext = loopback.getCurrentContext();
 	var currentUser = loopbackContext.get('currentUser');
 	var req = ctx.req;
@@ -42,7 +131,7 @@ module.exports = function uploadable(model, instance, property, ctx, versions, n
 	], function (err, results) {
 		if (err) {
 			var e = new WError(err, 'upload failed');
-			console.log(e.toString())
+			console.log(e.toString());
 			return next(e);
 		}
 		// success - back to caller
@@ -141,13 +230,13 @@ module.exports = function uploadable(model, instance, property, ctx, versions, n
 			form.on('close', function () {
 				// if we end up here w/o finding the part named "uploadedFile" bail out
 				if (!foundUploadedFileInUpload) {
-					cb(new VError('uploadedFile not found in multipart payload'))
+					cb(new VError('uploadedFile not found in multipart payload'));
 				}
 			});
 
 			form.parse(req);
 		}
-	};
+	}
 
 	// upload the original file to s3
 	// and based on the spec in versions upload as many resized versions as needed
@@ -240,8 +329,7 @@ module.exports = function uploadable(model, instance, property, ctx, versions, n
 			cb(null, fileInstance);
 		});
 	}
-
-};
+}
 
 // reorganize the array we get back from s3-uploader into an object
 // w/properties keyed on the "suffix" for each version defined in versions

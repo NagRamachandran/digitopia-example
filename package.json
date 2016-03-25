@@ -23,7 +23,8 @@
     "s3-uploader": "^1.1.0",
     "serve-favicon": "^2.0.1",
     "uuid": "^2.0.1",
-    "verror": "^1.6.1"
+    "verror": "^1.6.1",
+    "winston": "^2.2.0"
   },
   "devDependencies": {
     "grunt": "^0.4.5",
