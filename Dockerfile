@@ -13,7 +13,6 @@ ADD assets /var/app/current/assets
 ADD client /var/app/current/client
 ADD common /var/app/current/common
 ADD docker-assets/webapp /var/app/current/docker-assets/webapp
-ADD node_modules /var/app/current/node_modules
 ADD server /var/app/current/server
 ADD tests /var/app/current/tests
 ADD working /var/app/current/working
@@ -23,8 +22,23 @@ ADD package.json /var/app/current/package.json
 # set up supervisord
 RUN cd /var/app/current; cp docker-assets/webapp/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# install npm (we already copied node_modules in but this updates for OS specific builds if needed)
-RUN cd /var/app/current; npm install
+# To run npm install or not to run npm install, that is the question.
+#
+# in this case it is not needed so just copy the entire node_modules
+# directory to the container so it exactly matches the development
+# environment
+#
+ADD node_modules /var/app/current/node_modules
+
+# If there were os specific npm modules we could run npm install
+# but that comes with some thorny issues - you could get different
+# versions of packages running inside the container than are
+# running in your development environment. This is an issue to
+# consider when controlling you continuous deployment strategy.
+# Where possible I like npm to be a function of the development
+# environment keeping deployment out of module version hell.
+#
+# RUN cd /var/app/current; npm install
 
 VOLUME /var/app/current/client
 
