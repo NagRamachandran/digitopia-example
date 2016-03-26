@@ -1,18 +1,23 @@
-webapp:
-  build: .
-  volumes:
-    - ./client:/var/app/current/client:ro
-  ports:
-    - "3000:3000"
-  env_file:
-    - ./localdev.env
+version: '2'
+services:
+  webapp:
+    build: .
+    volumes:
+      - ./client:/var/app/current/client:ro
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./localdev.env
+    networks:
+      - frontend
 
-nginx:
-  restart: always
-  build: ./docker-assets/nginx/
-  ports:
-    - "80:8080"
-  volumes_from:
-    - webapp
-  links:
-    - webapp:webapp
+  nginx:
+    restart: always
+    build: ./docker-assets/nginx/
+    ports:
+      - "8080:8080"
+    networks:
+      - frontend
+
+networks:
+  frontend:
