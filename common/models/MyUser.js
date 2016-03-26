@@ -15,7 +15,7 @@ module.exports = function (MyUser) {
 					signed: req.signedCookies ? true : false,
 					maxAge: 1000 * accessToken.ttl
 				});
-				return res.redirect('/');
+				return res.redirect('/?alert=logged+in');
 			}
 		}
 		return next();

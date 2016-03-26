@@ -10,7 +10,8 @@ module.exports = function (server) {
     var ctx = server.loopback.getCurrentContext();
     var currentUser = ctx.get('currentUser');
     res.render('pages/home', {
-      'user': currentUser
+      'user': currentUser,
+      'alert': req.query.alert
     });
   });
 
@@ -27,7 +28,7 @@ module.exports = function (server) {
         res.status('400').send(err);
       }
       else {
-        res.redirect('/');
+        res.redirect('/?alert=registered,+please+log+in');
       }
     });
   });
