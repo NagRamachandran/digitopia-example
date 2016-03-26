@@ -1,15 +1,21 @@
 # Digitopia
 
-This is an example Strongloop app Scaffolding
+This is an example Strongloop app Scaffolding.
 
-The details of this configuration are discussed on [digitopia](http://blog.digitopia.com/)
+The details of this repository are discussed on [digitopia](http://blog.digitopia.com/)
 
 ####Installation
 
-[Download the repository](https://github.com/mediapolis/digitopia-example/archive/master.zip)
+To run the app:
 
-cd digitopia-example; npm install
+1. [Download the repository](https://github.com/mediapolis/digitopia-example/archive/master.zip)
 
-to run the app:
+2. unpack it
 
-AWS_S3_KEY="KEY" AWS_S3_KEY_ID="ID" S3_BUCKET="BUCKET" node .
+3. `cd digitopia-example`
+
+4. run `npm install`
+
+5. define localdev.env as described in see [keeping secrets](http://blog.digitopia.com/keeping-secrets/)
+
+6. run `./localdev.sh node .`
