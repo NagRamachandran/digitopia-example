@@ -5,10 +5,12 @@ RUN apt-get install -y supervisor
 RUN apt-get install -y nginx
 
 # set up supervisord
-ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+ADD docker-assets/nginx/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # set up nginx
-ADD nginx.conf /etc/nginx/conf.d/container.conf
+ADD docker-assets/nginx/nginx.conf /etc/nginx/conf.d/container.conf
+
+ADD client /var/app/current/client
 
 # expose nginx port
 EXPOSE 8080

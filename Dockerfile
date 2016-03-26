@@ -40,8 +40,6 @@ ADD node_modules /var/app/current/node_modules
 #
 # RUN cd /var/app/current; npm install
 
-VOLUME /var/app/current/client
-
 # expose webapp port
 EXPOSE 3000
 
