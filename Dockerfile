@@ -3,6 +3,7 @@ FROM ubuntu
 RUN apt-get update
 
 # install some packages
+RUN apt-get install -y build-essential
 RUN apt-get install -y supervisor
 RUN apt-get install -y git
 RUN apt-get install -y imagemagick
