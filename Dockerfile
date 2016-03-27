@@ -1,14 +1,18 @@
 # install packages
 FROM ubuntu
 RUN apt-get update
+
+# install some packages
 RUN apt-get install -y supervisor
-RUN apt-get install -y curl
-RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-RUN apt-get install -y nodejs
 RUN apt-get install -y git
 RUN apt-get install -y imagemagick
 
-# copy app into container
+# install node
+RUN apt-get install -y curl
+RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+RUN apt-get install -y nodejs
+
+# copy app from local repository into container
 ADD assets /var/app/current/assets
 ADD client /var/app/current/client
 ADD common /var/app/current/common
@@ -28,7 +32,7 @@ RUN cd /var/app/current; cp docker-assets/webapp/supervisord.conf /etc/superviso
 # directory to the container so it exactly matches the development
 # environment
 #
-ADD node_modules /var/app/current/node_modules
+# ADD node_modules /var/app/current/node_modules
 
 # If there were os specific npm modules we could run npm install
 # but that comes with some thorny issues - you could get different
@@ -38,7 +42,7 @@ ADD node_modules /var/app/current/node_modules
 # Where possible I like npm to be a function of the development
 # environment keeping deployment out of module version hell.
 #
-# RUN cd /var/app/current; npm install
+RUN cd /var/app/current; npm install
 
 # expose webapp port
 EXPOSE 3000

@@ -9,11 +9,23 @@ var mime = require('mime-types');
 var Uploader = require('s3-uploader');
 var VError = require('verror').VError;
 var WError = require('verror').WError;
-
+var log = require('docker-logger')({
+	syslog: {
+		enabled: true,
+		type: 'UDP_META',
+		port: 514
+	},
+	file: {
+		enabled: true,
+		location: '/var/app/current/working/logs'
+	}
+});
 // where uploads get saved
 var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
 var folder = process.env.S3_FOLDER ? process.env.S3_FOLDER : 'uploads/';
-var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-east-1';
+var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-standard';
+var endpoint = process.env.S3_ENDPOINT;
+var s3BucketEndpoint = process.env.S3_ENDPOINT ? true : false;
 
 module.exports = function () {
 
@@ -247,7 +259,9 @@ function uploadable(model, instance, property, ctx, versions, next) {
 				path: folder,
 				acl: 'public-read',
 				accessKeyId: process.env.AWS_S3_KEY_ID,
-				secretAccessKey: process.env.AWS_S3_KEY
+				secretAccessKey: process.env.AWS_S3_KEY,
+				s3BucketEndpoint: s3BucketEndpoint,
+				endpoint: endpoint //signatureVersion: 'v3'
 			},
 			cleanup: {
 				original: true,
@@ -261,6 +275,7 @@ function uploadable(model, instance, property, ctx, versions, next) {
 
 		client.upload(localCopy, {}, function (err, images, uploadmeta) {
 			if (err) {
+				log.error('error uploading', err);
 				cb(new VError(err, 's3 upload failed'));
 			}
 			else {
