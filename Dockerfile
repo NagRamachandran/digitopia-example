@@ -33,17 +33,17 @@ RUN cd /var/app/current; cp docker-assets/webapp/supervisord.conf /etc/superviso
 # directory to the container so it exactly matches the development
 # environment
 #
-# ADD node_modules /var/app/current/node_modules
+ADD node_modules /var/app/current/node_modules
 
 # If there were os specific npm modules we could run npm install
 # but that comes with some thorny issues - you could get different
 # versions of packages running inside the container than are
 # running in your development environment. This is an issue to
 # consider when controlling you continuous deployment strategy.
-# Where possible I like npm to be a function of the development
+# Where possible I like npm updates to be a function of the development
 # environment keeping deployment out of module version hell.
 #
-RUN cd /var/app/current; npm install
+# RUN cd /var/app/current; npm install
 
 # expose webapp port
 EXPOSE 3000

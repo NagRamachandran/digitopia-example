@@ -9,17 +9,7 @@ var mime = require('mime-types');
 var Uploader = require('s3-uploader');
 var VError = require('verror').VError;
 var WError = require('verror').WError;
-var log = require('docker-logger')({
-	syslog: {
-		enabled: true,
-		type: 'UDP_META',
-		port: 514
-	},
-	file: {
-		enabled: true,
-		location: '/var/app/current/working/logs'
-	}
-});
+
 // where uploads get saved
 var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
 var folder = process.env.S3_FOLDER ? process.env.S3_FOLDER : 'uploads/';
@@ -275,7 +265,6 @@ function uploadable(model, instance, property, ctx, versions, next) {
 
 		client.upload(localCopy, {}, function (err, images, uploadmeta) {
 			if (err) {
-				log.error('error uploading', err);
 				cb(new VError(err, 's3 upload failed'));
 			}
 			else {
