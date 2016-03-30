@@ -14,8 +14,6 @@ var WError = require('verror').WError;
 var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
 var folder = process.env.S3_FOLDER ? process.env.S3_FOLDER : 'uploads/';
 var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-standard';
-var endpoint = process.env.S3_ENDPOINT;
-var s3BucketEndpoint = process.env.S3_ENDPOINT ? true : false;
 
 module.exports = function () {
 
@@ -30,7 +28,7 @@ module.exports = function () {
 			}
 		});
 
-		// MySQL: set type of discriminatior property because default
+		// MySQL: set type on the discriminatior property because default
 		// in jugglingDB is varchar(512) which is too big to index
 		server.models.Upload.dataSource.defineProperty('Upload', 'uploadableType', {
 			type: 'string',
@@ -38,7 +36,7 @@ module.exports = function () {
 			index: true
 		});
 
-		// cleanup the uploads before destroying user
+		// cleanup the uploads before destroying a model instance
 		MyModel.observe('before delete', function (ctx, doneObserving) {
 			MyModel.find({
 				where: ctx.where,
@@ -249,9 +247,7 @@ function uploadable(model, instance, property, ctx, versions, next) {
 				path: folder,
 				acl: 'public-read',
 				accessKeyId: process.env.AWS_S3_KEY_ID,
-				secretAccessKey: process.env.AWS_S3_KEY,
-				s3BucketEndpoint: s3BucketEndpoint,
-				endpoint: endpoint //signatureVersion: 'v3'
+				secretAccessKey: process.env.AWS_S3_KEY
 			},
 			cleanup: {
 				original: true,

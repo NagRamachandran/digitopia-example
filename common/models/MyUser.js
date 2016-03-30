@@ -28,13 +28,13 @@ module.exports = function (MyUser) {
 		var versions = [{
 			suffix: 'large',
 			quality: 90,
-			maxHeight: 1040,
-			maxWidth: 1040,
+			maxHeight: 1024,
+			maxWidth: 1024,
 		}, {
 			suffix: 'medium',
 			quality: 90,
-			maxHeight: 780,
-			maxWidth: 780
+			maxHeight: 480,
+			maxWidth: 480
 		}, {
 			suffix: 'thumb',
 			quality: 90,
@@ -48,6 +48,7 @@ module.exports = function (MyUser) {
 			aspect: '1:1'
 		}];
 
+		// add uploadable endpoints to MyUser
 		uploadable(MyUser, 'MyUser', versions);
 	});
 };

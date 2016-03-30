@@ -1,7 +1,5 @@
 var async = require('async');
 
-var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
-
 module.exports = function (Upload) {
 	// Remove dangling files from s3 before deleting instance
 	Upload.observe('before delete', function (ctx, doneObserving) {
