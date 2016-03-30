@@ -1,1 +1,7 @@
-{"name":"Digitopia-example","tagline":"Example Loopback Scaffolding ","body":"###Some Bandages for the Bleeding Edge\r\n\r\nUsing Node, Express, Loopback and the fertile Node ecosystem to build full stack web services.\r\n\r\n---\r\n\r\nThis application scaffolding holds the example code on [blog.digitopia.com](http://blog.digitopia.com).\r\n\r\n---\r\n\r\nThe scaffolding makes use of Amazon's AWS s3 service - you will need an AWS account to run the examples.\r\n\r\n---\r\n\r\nTo run the scaffolding download and unpack it from github, run `npm install` and run the app.\r\n\r\nAWS_S3_KEY=\"`KEY`\" AWS_S3_KEY_ID=\"`ID`\" S3_BUCKET=\"`BUCKET`\" node .","google":"UA-43882864-1","note":"Don't delete this file! It's used internally to help with page regeneration."}
+{
+  "name": "Digitopia-example",
+  "tagline": "Example Loopback Scaffolding ",
+  "body": "# Digitopia\r\n\r\nThis is an example Strongloop app Scaffolding.\r\n\r\nThe details of this repository are discussed on [digitopia](http://blog.digitopia.com/)\r\n\r\n####Installation\r\n\r\nTo run the app:\r\n\r\n1. [Download the repository](https://github.com/mediapolis/digitopia-example/archive/master.zip)\r\n\r\n2. unpack it\r\n\r\n3. `cd digitopia-example`\r\n\r\n4. run `npm install`\r\n\r\n5. define localdev.env as described in see [keeping secrets](http://blog.digitopia.com/keeping-secrets/)\r\n\r\n6. run `./localdev.sh node .`\r\n",
+  "google": "UA-43882864-1",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
