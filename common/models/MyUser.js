@@ -25,28 +25,31 @@ module.exports = function (MyUser) {
 	MyUser.on('attached', function () {
 
 		// on Upload make versions for various UI uses
-		var versions = [{
-			suffix: 'large',
-			quality: 90,
-			maxHeight: 1024,
-			maxWidth: 1024,
-		}, {
-			suffix: 'medium',
-			quality: 90,
-			maxHeight: 480,
-			maxWidth: 480
-		}, {
-			suffix: 'thumb',
-			quality: 90,
-			maxHeight: 320,
-			maxWidth: 320
-		}, {
-			suffix: 'icon',
-			quality: 90,
-			maxWidth: 50,
-			maxHeight: 50,
-			aspect: '1:1'
-		}];
+		var versions = {
+			'photo': [{
+				suffix: 'large',
+				quality: 90,
+				maxHeight: 1024,
+				maxWidth: 1024,
+			}, {
+				suffix: 'medium',
+				quality: 90,
+				maxHeight: 480,
+				maxWidth: 480
+			}, {
+				suffix: 'thumb',
+				quality: 90,
+				maxHeight: 320,
+				maxWidth: 320,
+				aspect: '1:1'
+			}, {
+				suffix: 'icon',
+				quality: 90,
+				maxWidth: 50,
+				maxHeight: 50,
+				aspect: '1:1'
+			}]
+		};
 
 		// add uploadable endpoints to MyUser
 		uploadable(MyUser, 'MyUser', versions);

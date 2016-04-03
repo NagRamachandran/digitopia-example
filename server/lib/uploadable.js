@@ -17,7 +17,7 @@ var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-standard';
 
 module.exports = function () {
 
-	return function uploadableFactory(MyModel, myModelName, versions) {
+	return function uploadableFactory(MyModel, myModelName, versionsByProperty) {
 
 		// define polymorphic hasMany relationship from MyModel to Upload
 		MyModel.hasMany(server.models.Upload, {
@@ -62,7 +62,7 @@ module.exports = function () {
 				if (!instance) {
 					return cb(new VError(err, 'instance not found %s.%s', MyModelName, ctx.args.id));
 				}
-				uploadable(myModelName, instance, property, ctx, versions, function (err, upload) {
+				uploadable(myModelName, instance, property, ctx, versionsByProperty, function (err, upload) {
 					return cb(err, upload);
 				});
 			});
@@ -113,7 +113,7 @@ module.exports = function () {
 // ctx: the context of the request
 // versions: array specifying the resize specs for the upload fileSet
 
-function uploadable(model, instance, property, ctx, versions, next) {
+function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 	var loopbackContext = loopback.getCurrentContext();
 	var currentUser = loopbackContext.get('currentUser');
 	var req = ctx.req;
@@ -121,6 +121,8 @@ function uploadable(model, instance, property, ctx, versions, next) {
 	var params = req.query.id ? req.query : req.body;
 
 	folder = model + '-' + property + '/';
+
+	var versions = versionsByProperty[property] ? versionsByProperty[property] : [];
 
 	// steps for processing the request
 	async.waterfall([

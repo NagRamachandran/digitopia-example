@@ -8,7 +8,11 @@ block content
 	h3.
 		Upload Photo
 
-	- var photo = getUploadForProperty('photo',user.uploads())
+	- var photo = getUploadForProperty('photo',user.uploads(),null,true)
+	- var large = getUploadForProperty('photo',user.uploads(),'large',true)
+	- var medium = getUploadForProperty('photo',user.uploads(),'medium',true)
+	- var thumb = getUploadForProperty('photo',user.uploads(),'thumb',true)
+	- var icon = getUploadForProperty('photo',user.uploads(),'icon',true)
 
 	#scope-pages-upload
 		.row
@@ -23,4 +27,17 @@ block content
 		if photo.imageSet
 			.row
 				.col-sm-12
-					img(src= photo.imageSet['icon'].url)
+					p icon
+					img(src= icon.url)
+			.row
+				.col-sm-12
+					p thumb
+					img(src= thumb.url)
+			.row
+				.col-sm-12
+					p medium
+					img(src= medium.url)
+			.row
+				.col-sm-12
+					p large
+					img(src= large.url)
