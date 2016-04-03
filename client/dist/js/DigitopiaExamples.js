@@ -16912,6 +16912,58 @@ function GetJQueryPlugin(classname,obj) {
 
 })(window, document);
 ;(function ($) {
+	function adminLoginController(elem, options) {
+		this.element = $(elem);
+
+		var self = this;
+		this.start = function () {
+			this.element.on('submit', function (e) {
+				e.preventDefault();
+				$.post('/api/MyUsers/login', {
+						'email': self.element.find('[name="email"]').val(),
+						'password': self.element.find('[name="password"]').val()
+					})
+					.done(function () {
+						loadPage('/admin?login');
+						didLogIn();
+					})
+					.fail(function () {
+						flashAjaxStatus('error', 'login failed');
+					});
+			});
+		};
+
+		this.stop = function () {
+			this.element.off('submit');
+		};
+	}
+	$.fn.adminLoginController = GetJQueryPlugin('adminLoginController', adminLoginController);
+})(jQuery);
+;(function ($) {
+	function adminLogoutController(elem, options) {
+		this.element = $(elem);
+		var self = this;
+		this.start = function () {
+			this.element.on('click', function (e) {
+				e.preventDefault();
+				$.post('/api/MyUsers/logout')
+					.done(function () {
+						loadPage('/admin?logout');
+						didLogOut();
+					})
+					.fail(function () {
+						alert("error");
+					});
+			});
+		};
+
+		this.stop = function () {
+			this.element.off('click');
+		};
+	}
+	$.fn.adminLogoutController = GetJQueryPlugin('adminLogoutController', adminLogoutController);
+})(jQuery);
+;(function ($) {
 	// disable dropzone auto instantiation
 	Dropzone.autoDiscover = false;
 
@@ -16974,30 +17026,96 @@ function GetJQueryPlugin(classname,obj) {
 
 	$.fn.dropzoneController = GetJQueryPlugin('dropzoneController', dropzoneController);
 })(jQuery);
-;var options = {
-	'coverResize': false,
-	'geometry': {
-		'enabled': true,
-		breakpoints: [{
-			className: 'digitopia-xsmall',
-			maxWidth: 768
-		}, {
-			className: 'digitopia-small',
-			maxWidth: 992
-		}, {
-			className: 'digitopia-medium',
-			maxWidth: 1200
-		}, {
-			className: 'digitopia-large',
-			maxWidth: undefined
-		}, ],
-	},
-	'hijax': {
-		'enabled': false,
-		'disableScrollAnimation': true
-	},
-};
-$('body').digitopiaController(options);
+;(function ($) {
+	var options = {
+		'coverResize': false,
+		'geometry': {
+			'enabled': true,
+			breakpoints: [{
+				className: 'digitopia-xsmall',
+				maxWidth: 768
+			}, {
+				className: 'digitopia-small',
+				maxWidth: 992
+			}, {
+				className: 'digitopia-medium',
+				maxWidth: 1200
+			}, {
+				className: 'digitopia-large',
+				maxWidth: undefined
+			}, ],
+		},
+		'hijax': {
+			'enabled': true,
+			'disableScrollAnimation': true
+		},
+	};
+
+	$('body').digitopiaController(options);
+
+})(jQuery);
+
+function loadPage(href) {
+	$('body').trigger('DigitopiaLoadPage', href);
+}
+
+function getAccessToken() {
+	return $.cookie('access_token');
+}
+
+function didLogIn() {
+	var current = getAccessToken();
+	$('#document-body').removeClass('is-logged-out').addClass('is-logged-in');
+}
+
+function didLogOut() {
+	$('#document-body').removeClass('is-logged-in').addClass('is-logged-out'); // css login status rules
+	$.removeCookie('access_token');
+}
+
+(function ($) {
+	if (getAccessToken()) {
+		didLogIn();
+	}
+	else {
+		didLogOut();
+	}
+})(jQuery);
+
+function flashAjaxStatus(level, message) {
+	$('#ajax-status').empty().html(level + ": " + message);
+	setTimeout(function () {
+		$('#ajax-status').empty()
+	}, 2000);
+}
+;(function ($) {
+	function loginController(elem, options) {
+		this.element = $(elem);
+
+		var self = this;
+		this.start = function () {
+			this.element.on('submit', function (e) {
+				e.preventDefault();
+				$.post('/api/MyUsers/login', {
+						'email': self.element.find('[name="email"]').val(),
+						'password': self.element.find('[name="password"]').val()
+					})
+					.done(function () {
+						loadPage('/?login');
+						didLogIn();
+					})
+					.fail(function () {
+						flashAjaxStatus('error', 'login failed');
+					});
+			});
+		};
+
+		this.stop = function () {
+			this.element.off('submit');
+		};
+	}
+	$.fn.loginController = GetJQueryPlugin('loginController', loginController);
+})(jQuery);
 ;(function ($) {
 	function logoutController(elem, options) {
 		this.element = $(elem);
@@ -17007,7 +17125,8 @@ $('body').digitopiaController(options);
 				e.preventDefault();
 				$.post('/api/MyUsers/logout')
 					.done(function () {
-						document.location.href = '/';
+						loadPage('/?logout');
+						didLogOut();
 					})
 					.fail(function () {
 						alert("error");
@@ -17016,7 +17135,7 @@ $('body').digitopiaController(options);
 		};
 
 		this.stop = function () {
-
+			this.element.off('click');
 		};
 	}
 	$.fn.logoutController = GetJQueryPlugin('logoutController', logoutController);

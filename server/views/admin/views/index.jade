@@ -1,0 +1,19 @@
+extends ../admin-wrapper
+
+block content
+
+	section
+		.container-fluid
+			.row
+				.col-md-12
+					.page-heading
+						h3
+							= model
+							small.pull-right
+								a.icon-margin(href="" class="btn btn-xs btn-success" ui-sref= ".list")
+									<i class="fa fa-list"></i>
+								
+								a.icon-margin(href="" class="btn btn-xs btn-success" ui-sref= ".add")
+									<i class="fa fa-plus"></i>
+					
+		<section ui-view class="content"></section>

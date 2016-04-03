@@ -1,0 +1,21 @@
+extends ../admin-wrapper
+
+block content
+
+	section
+		.container-fluid
+			.row
+				.col-md-12
+					.panel.panel-default
+						.panel-heading
+							= 'row {{vm.model.id}}'
+						.panel-body.property-panel-body
+							.row.property-row(ng-repeat="col in vm.columns")
+								.col-sm-3.property-label
+									{{ col.name }}
+								.col-sm-9.property-value
+									{{ vm.model[col.field] }}
+					uib-tabset
+						uib-tab(ng-repeat="relation in vm.relations" heading="{{relation.name}}" ui-sref=".child({'prop':'{{relation.name}}'})").
+					.tab-content
+						div(ui-view="child")

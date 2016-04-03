@@ -15,9 +15,17 @@ module.exports = function (MyUser) {
 					signed: req.signedCookies ? true : false,
 					maxAge: 1000 * accessToken.ttl
 				});
-				return res.redirect('/?alert=logged+in');
 			}
 		}
+		return next();
+	});
+
+	MyUser.afterRemote('logout', function removeLoginCookie(context, accessToken, next) {
+		var res = context.res;
+		var req = context.req;
+		res.clearCookie('access_token', {
+			signed: req.signedCookies ? true : false
+		});
 		return next();
 	});
 

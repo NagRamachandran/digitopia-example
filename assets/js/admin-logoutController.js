@@ -1,13 +1,13 @@
 (function ($) {
-	function logoutController(elem, options) {
+	function adminLogoutController(elem, options) {
 		this.element = $(elem);
-
+		var self = this;
 		this.start = function () {
 			this.element.on('click', function (e) {
 				e.preventDefault();
 				$.post('/api/MyUsers/logout')
 					.done(function () {
-						loadPage('/?logout');
+						loadPage('/admin?logout');
 						didLogOut();
 					})
 					.fail(function () {
@@ -20,5 +20,5 @@
 			this.element.off('click');
 		};
 	}
-	$.fn.logoutController = GetJQueryPlugin('logoutController', logoutController);
+	$.fn.adminLogoutController = GetJQueryPlugin('adminLogoutController', adminLogoutController);
 })(jQuery);

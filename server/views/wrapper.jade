@@ -20,8 +20,10 @@ html(lang="en")
       
   body#document-body
 
-    #content.container
+    #content.container(data-hijax="true")
       block content
+
+    #ajax-status
 
     block controller
 

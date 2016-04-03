@@ -3698,8 +3698,19 @@ Copyright (c) 2015 Daniel Eden
         border-right: 6px solid transparent;
         border-bottom: 6px solid #be2626; }
 
+#admin-content {
+  margin-top: 70px;
+  margin-bottom: 100px;
+}
+
 body {
   background-color: #eee;
+}
+.is-logged-in .hidden-logged-in {
+  display: none !important;
+}
+.is-logged-out .hidden-logged-out {
+  display: none !important;
 }
 #scope-pages-upload .profile-photo-viewport {
   position: relative;
@@ -3736,6 +3747,11 @@ body {
   opacity: 1;
   -ms-filter: none;
   filter: none;
+}
+#ajax-status {
+  position: fixed;
+  right: 0px;
+  bottom: 0px;
 }
 
 /*!
