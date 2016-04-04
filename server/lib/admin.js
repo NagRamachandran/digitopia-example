@@ -29,28 +29,52 @@ module.exports = function getModelInfo(server, modelName) {
 
 	var keys = ['description', 'plural', 'base', 'idInjection',
 		'persistUndefinedAsNull', 'strict', 'hidden',
-		'validations', 'relations', 'acls', 'methods', 'mixins', 'adminForms'
+		'validations', 'relations', 'acls', 'methods', 'mixins', 'admin'
 	];
 
 	keys.forEach(function (key) {
 		result[key] = _.get(model.definition.settings, key);
 	});
 
-	if (!result.adminForms) {
-		result.adminForms = {
-			listColumns: [],
-			editColumns: [],
-			viewColumns: []
+	if (!result.admin) {
+		result.admin = {
+			listProperties: [],
+			editProperties: [],
+			viewProperties: []
+		};
+	}
+
+	if (!result.admin.listProperties) {
+		result.admin.listProperties = [];
+		result.admin.populateList = true;
+	}
+
+	if (!result.admin.editProperties) {
+		result.admin.editProperties = [];
+		result.admin.populateEdit = true;
+	}
+
+	if (!result.admin.viewProperties) {
+		result.admin.viewProperties = [];
+		result.admin.populateView = true;
+	}
+
+	for (var prop in result.properties) {
+		var def = {
+			name: prop,
+			field: prop
 		};
 
-		for (var prop in result.properties) {
-			var def = {
-				name: prop,
-				field: prop
-			};
-			result.adminForms.listColumns.push(def);
-			result.adminForms.editColumns.push(def);
-			result.adminForms.viewColumns.push(def);
+		if (result.admin.populateList) {
+			result.admin.listProperties.push(def);
+		}
+
+		if (result.admin.populateEdit) {
+			result.admin.editProperties.push(def);
+		}
+
+		if (result.admin.populateView) {
+			result.admin.viewProperties.push(def);
 		}
 	}
 

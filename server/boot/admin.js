@@ -33,8 +33,28 @@ module.exports = function (server) {
 		var model = req.params[0];
 		var schema = getModelInfo(server, model);
 
-		res.render('admin/views/index.jade', {
-			model: model
+		var q;
+
+		if (!req.query.property) {
+			req.query.property = schema.admin.listProperties[0]
+		}
+
+		if (req.query.q) {
+			q = {
+				'where': {}
+			};
+			q.where[req.query.property] = {
+				'like': req.query.q + '%'
+			};
+		}
+
+		server.models[model].find(q, function (err, instances) {
+			res.render('admin/views/index.jade', {
+				model: model,
+				schema: schema,
+				instances: instances,
+				q: req.query.q
+			});
 		});
 	});
 

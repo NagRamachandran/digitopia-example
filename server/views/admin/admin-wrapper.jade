@@ -11,6 +11,8 @@ html(lang="en")
     
     block seo
 
+    link(rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css")
+
     if env === 'production'
       link(rel='stylesheet' href="/dist/css/DigitopiaExamples.min.css")
     else 
@@ -29,6 +31,9 @@ html(lang="en")
             span.icon-bar
           a.navbar-brand(href='/admin') Digitopia Admin
         #navbar.navbar-collapse.collapse
+          ul.nav.navbar-nav
+            li
+              a(href="/admin/views/MyUser/index") MyUsers
           .hidden-logged-in
             form.navbar-form.navbar-right(data-jsclass="adminLoginController")
               .form-group

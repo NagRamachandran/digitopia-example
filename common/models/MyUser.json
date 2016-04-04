@@ -8,14 +8,15 @@
   "properties": {},
   "validations": [],
   "relations": {},
-  "acls": [
-    {
-      "accessType": "EXECUTE",
-      "principalType": "ROLE",
-      "principalId": "$owner",
-      "permission": "ALLOW",
-      "property": "upload"
-    }
-  ],
-  "methods": {}
+  "acls": [{
+    "accessType": "EXECUTE",
+    "principalType": "ROLE",
+    "principalId": "$owner",
+    "permission": "ALLOW",
+    "property": "upload"
+  }],
+  "methods": {},
+  "admin": {
+    "listProperties": ["email", "username", "emailVerified"]
+  }
 }
