@@ -17,6 +17,7 @@
   }],
   "methods": {},
   "admin": {
+    "defaultProperty": "email",
     "listProperties": ["email", "username", "emailVerified"]
   }
 }

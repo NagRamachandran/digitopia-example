@@ -43,6 +43,7 @@
   "acls": [],
   "methods": {},
   "admin": {
+    "defaultProperty": "url",
     "listProperties": ["property", "url"]
   }
 }

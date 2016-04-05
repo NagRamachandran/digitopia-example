@@ -16931,7 +16931,7 @@ function GetJQueryPlugin(classname,obj) {
 
 			this.element.on('click', '.add-button', function (e) {
 				e.preventDefault();
-				var id = $(this).data('id');
+				loadPage('/admin/views/' + self.settings.model + '/add')
 			});
 
 			this.element.on('click', '.edit-button', function (e) {
@@ -16967,7 +16967,11 @@ function GetJQueryPlugin(classname,obj) {
 		};
 
 		this.stop = function () {
+			this.element.off('click', '.list-button');
+			this.element.off('click', '.delete-button');
+			this.element.off('click', '.edit-button');
 			this.element.off('click', '.add-button');
+			this.element.off('click', '.save-button');
 			this.element.off('click', '.search-button');
 			this.element.off('click', '.instance-select');
 		};

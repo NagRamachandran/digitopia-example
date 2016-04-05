@@ -40,6 +40,7 @@ module.exports = function getModelInfo(server, modelName) {
 
 	if (!result.admin) {
 		result.admin = {
+			defaultProperty: 'id',
 			listProperties: [],
 			editProperties: [],
 			viewProperties: []

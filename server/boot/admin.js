@@ -59,47 +59,29 @@ module.exports = function (server) {
 		});
 	});
 
-	// view instance properties
 	router.get(/^\/admin\/views\/([^\/]*)\/add$/, userAuth, function (req, res, next) {
-		var model = req.params[0];
-		var schema = getModelInfo(server, model);
-
-		res.render('admin/views/add.jade', {
-			model: model
-		});
-	});
-
-	// edit instance properties
-	router.get(/^\/admin\/views\/([^\/]*)\/(\d+)\/edit$/, userAuth, function (req, res, next) {
-		var model = req.params[0];
-		var id = req.params[1];
-		var schema = getModelInfo(server, model);
-
-		server.models[model].findById(id, function (err, instance) {
-			if (err) {
-				res.status(500).send('error ' + err);
-			}
-			if (!instance) {
-				res.status(404).send('not found');
-			}
-
-			res.render('admin/views/edit.jade', {
-				'model': model,
-				'schema': schema,
-				'instance': instance,
-				'endpoint': req.protocol + '://' + req.get('host') + req.originalUrl
-			});
-		});
+		doTemplate('add', req, res, next);
 	});
 
 	router.get(/^\/admin\/views\/([^\/]*)\/(\d+)\/view$/, userAuth, function (req, res, next) {
+		doTemplate('view', req, res, next);
+	});
+
+	router.get(/^\/admin\/views\/([^\/]*)\/(\d+)\/edit$/, userAuth, function (req, res, next) {
+		doTemplate('edit', req, res, next);
+	});
+
+	function doTemplate(mode, req, res, next) {
 		var model = req.params[0];
 		var id = req.params[1];
+
 		var schema = getModelInfo(server, model);
 
 		var childRelations = [];
 		var parentRelations = [];
 		var includes = [];
+
+		var endpoint = req.protocol + '://' + req.get('host') + req.originalUrl;
 
 		for (var relation in schema.relations) {
 			if (schema.relations[relation].type === 'hasMany') {
@@ -115,26 +97,78 @@ module.exports = function (server) {
 			}
 		}
 
-		server.models[model].findById(id, {
-			include: includes
-		}, function (err, instance) {
+		var theInstance;
+		async.series([
+			function resolve(cb) {
+				server.models[model].findById(id, {
+					include: includes
+				}, function (err, instance) {
+					theInstance = instance;
+					cb(err, instance);
+				});
+			}
+		], function (err, results) {
 			if (err) {
 				res.status(500).send('error ' + err);
 			}
-			if (!instance) {
+			if (!theInstance) {
 				res.status(404).send('not found');
 			}
 
-			res.render('admin/views/view.jade', {
+			var parents = [];
+			for (var i in parentRelations) {
+				var relation = parentRelations[i];
+				var related = theInstance[relation.name]();
+				if (related) {
+					if (relation.polymorphic) {
+						var relatedModel = theInstance[relation.polymorphic.discriminator];
+						var relatedSchema = getModelInfo(server, relatedModel);
+						parents.push({
+							name: relation.name,
+							model: relatedModel,
+							url: '/admin/views/' + theInstance[relation.polymorphic.discriminator] + '/' + related.id + '/view',
+							description: related[relatedSchema.admin.defaultProperty]
+						});
+					}
+					else {}
+				}
+			}
+
+			var children = [];
+			for (var i in childRelations) {
+				var relation = childRelations[i];
+				var related = theInstance[relation.name]();
+				if (related) {
+					var relatedModel = relation.modelTo.definition.name;
+					var relatedSchema = getModelInfo(server, relatedModel);
+
+					for (var j = 0; j < related.length; j++) {
+						var child = related[j];
+						var item = {
+							name: relation.name,
+							model: relatedModel,
+							url: '/admin/views/' + relatedModel + '/' + child.id + '/view',
+							description: child[relatedSchema.admin.defaultProperty]
+						}
+						children.push(item);
+					}
+				}
+			}
+
+
+			res.render('admin/views/instance.jade', {
+				'mode': mode,
 				'model': model,
 				'schema': schema,
-				'instance': instance,
+				'instance': theInstance,
 				'childRelations': childRelations,
-				'parentRelations': parentRelations
+				'parentRelations': parentRelations,
+				'endpoint': endpoint,
+				'parents': parents,
+				'children': children
 			});
 		});
-
-	});
+	}
 
 	server.use(router);
 };
