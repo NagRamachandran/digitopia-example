@@ -1,34 +1,29 @@
 extends ../admin-wrapper
 
 block content
-	section(data-jsclass="adminListController")
-		.page-heading
-			.row
-				.col-xs-12
-					.panel.panel-default
-						.panel-heading
-							.pull-right
-								a.list-button.btn.btn-success(href="#")
-									<i class="fa fa-list"></i>
-								
-								a.add-button.btn.btn-success(href="#")
-									<i class="fa fa-plus"></i>
-							.row
-								.col-md-4
-									h4= model
-								.col-md-4
-									.input-group
-										input.form-control(type="text" name="q" value= q placeholder="Search " + model)
-										span.input-group-btn
-											button.btn.btn-default.search-button(type="button") Go
-											
-						table.table.table-condensed.table-striped.table-hover
-							tr
+	section(data-jsclass="adminListController" data-model= model data-search-property= schema.admin.listProperties[0])
+		.row
+			.col-xs-12
+				.panel.panel-default
+					.panel-heading
+						.pull-right
+							.add-button.fa.fa-plus.fa-2x
+						.row
+							.col-md-4
+								h4= model
+							.col-md-4
+								.input-group
+									input.form-control(type="text" name="q" value= q placeholder="Search " + model)
+									span.input-group-btn
+										button.btn.btn-default.search-button(type="button") Go
+										
+					table.table.table-condensed.table-striped.table-hover
+						tr
+							for property in schema.admin.listProperties
+								th= property
+						for instance in instances
+							tr.instance-select(data-id= instance.id)
 								for property in schema.admin.listProperties
-									th= property
-							for instance in instances
-								tr
-									for property in schema.admin.listProperties
-										td= instance[property]
-						.panel-footer.text-right
-							| pagination
+									td= instance[property]
+					.panel-footer.text-right
+						| pagination

@@ -29,12 +29,14 @@ module.exports = function getModelInfo(server, modelName) {
 
 	var keys = ['description', 'plural', 'base', 'idInjection',
 		'persistUndefinedAsNull', 'strict', 'hidden',
-		'validations', 'relations', 'acls', 'methods', 'mixins', 'admin'
+		'validations', 'acls', 'methods', 'mixins', 'admin'
 	];
 
 	keys.forEach(function (key) {
 		result[key] = _.get(model.definition.settings, key);
 	});
+
+	result['relations'] = model.relations;
 
 	if (!result.admin) {
 		result.admin = {
@@ -44,37 +46,51 @@ module.exports = function getModelInfo(server, modelName) {
 		};
 	}
 
+	var populateList, populateEdit, populateView;
+
 	if (!result.admin.listProperties) {
 		result.admin.listProperties = [];
-		result.admin.populateList = true;
+		populateList = true;
 	}
 
 	if (!result.admin.editProperties) {
 		result.admin.editProperties = [];
-		result.admin.populateEdit = true;
+		populateEdit = true;
 	}
 
 	if (!result.admin.viewProperties) {
 		result.admin.viewProperties = [];
-		result.admin.populateView = true;
+		populateView = true;
 	}
 
 	for (var prop in result.properties) {
-		var def = {
-			name: prop,
-			field: prop
-		};
 
-		if (result.admin.populateList) {
-			result.admin.listProperties.push(def);
+		result.properties[prop].admin = {};
+
+		var type = result.properties[prop].type;
+
+		if (type === 'Boolean') {
+			type = 'checkbox';
+		}
+		if (type === 'String') {
+			type = 'text';
+		}
+		if (type === 'Object') {
+			type = 'text';
 		}
 
-		if (result.admin.populateEdit) {
-			result.admin.editProperties.push(def);
+		result.properties[prop].admin.inputType = type;
+
+		if (populateList) {
+			result.admin.listProperties.push(prop);
 		}
 
-		if (result.admin.populateView) {
-			result.admin.viewProperties.push(def);
+		if (populateEdit) {
+			result.admin.editProperties.push(prop);
+		}
+
+		if (populateView) {
+			result.admin.viewProperties.push(prop);
 		}
 	}
 

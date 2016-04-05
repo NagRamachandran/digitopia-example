@@ -34,9 +34,15 @@
   "relations": {
     "owner": {
       "type": "belongsTo",
-      "polymorphic": true
+      "polymorphic": {
+        "foreignKey": "uploadableId",
+        "discriminator": "uploadableType"
+      }
     }
   },
   "acls": [],
-  "methods": {}
+  "methods": {},
+  "admin": {
+    "listProperties": ["property", "url"]
+  }
 }

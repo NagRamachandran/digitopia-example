@@ -15,7 +15,7 @@
   },
   "Upload": {
     "dataSource": "db",
-    "public": false
+    "public": true
   },
   "User": {
     "dataSource": "db",
