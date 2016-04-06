@@ -6,7 +6,9 @@
 
 		this.settings = $.extend({
 			model: this.element.data('model'),
-			searchProperty: this.element.data('search-property')
+			searchProperty: this.element.data('search-property'),
+			endpoint: this.element.data('endpoint'),
+			mode: this.element.data('mode')
 		}, options || {});
 
 		this.start = function () {
@@ -38,7 +40,6 @@
 				}
 			});
 
-
 			this.element.on('click', '.search-button', function (e) {
 				e.preventDefault();
 				var q = self.element.find('[name="q"]').val();
@@ -69,7 +70,7 @@
 		this.delete = function () {
 			$.ajax({
 					method: 'delete',
-					url: self.element.data('endpoint')
+					url: self.settings.endpoint
 				}).done(function (data) {
 					loadPage('/admin/views/' + self.settings.model + '/index')
 				})
@@ -82,16 +83,21 @@
 			var form = self.element.find('input,textarea,select').serializeJSON({
 				checkboxUncheckedValue: 'false',
 				parseBooleans: true
-			})
+			});
+
+			var method = self.settings.mode === 'edit' ? 'put' : 'post';
+
+			flashAjaxStatus('info', 'saving...');
+
 			$.ajax({
-					method: 'put',
-					url: self.element.data('endpoint'),
+					method: method,
+					url: self.settings.endpoint,
 					data: form
 				}).done(function (data) {
 					loadPage('/admin/views/' + self.settings.model + '/' + data.id + '/view');
 				})
 				.fail(function (jqXHR, textStatus, errorThrown) {
-					flashAjaxStatus('error', 'Could not delete: ' + textStatus)
+					flashAjaxStatus('error', 'Could not ' + method + 'instance: ' + textStatus)
 				})
 		};
 	}

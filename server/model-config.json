@@ -44,5 +44,9 @@
   "ImageSet": {
     "dataSource": "db",
     "public": true
+  },
+  "TypeTest": {
+    "dataSource": "db",
+    "public": true
   }
 }

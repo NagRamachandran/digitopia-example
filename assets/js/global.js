@@ -55,8 +55,12 @@ function didLogOut() {
 })(jQuery);
 
 function flashAjaxStatus(level, message) {
-	$('#ajax-status').empty().html(level + ": " + message);
+
+	var alert = '<div class="alert alert-' + level + '">' + message + '</div>';
+
+	$('#ajax-status').empty().html(alert);
+
 	setTimeout(function () {
-		$('#ajax-status').empty()
+		$('#ajax-status').empty();
 	}, 2000);
 }

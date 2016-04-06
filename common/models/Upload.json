@@ -5,6 +5,13 @@
   "options": {
     "validateUpsert": true
   },
+  "admin": {
+    "defaultProperty": "url",
+    "listProperties": [
+      "property",
+      "url"
+    ]
+  },
   "properties": {
     "property": {
       "type": "string",
@@ -41,9 +48,5 @@
     }
   },
   "acls": [],
-  "methods": {},
-  "admin": {
-    "defaultProperty": "url",
-    "listProperties": ["property", "url"]
-  }
+  "methods": {}
 }

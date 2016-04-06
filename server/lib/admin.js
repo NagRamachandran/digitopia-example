@@ -1,6 +1,13 @@
 var utils = require('loopback-datasource-juggler/lib/utils');
 var _ = require('lodash');
 
+function clone(obj) {
+	if (!obj) {
+		return obj
+	}
+	return JSON.parse(JSON.stringify(obj));
+}
+
 function formatProperties(properties) {
 	var result = {};
 	for (var key in properties) {
@@ -10,7 +17,12 @@ function formatProperties(properties) {
 				result[key][prop] = properties[key][prop];
 			}
 			else {
-				result[key]['type'] = properties[key].type.name;
+				if (properties[key].type instanceof Array) {
+					result[key]['type'] = 'Array';
+				}
+				else {
+					result[key]['type'] = properties[key].type.name;
+				}
 			}
 		}
 	}
@@ -27,23 +39,19 @@ module.exports = function getModelInfo(server, modelName) {
 		properties: formatProperties(model.definition.properties)
 	};
 
-	var keys = ['description', 'plural', 'base', 'idInjection',
-		'persistUndefinedAsNull', 'strict', 'hidden',
-		'validations', 'acls', 'methods', 'mixins', 'admin'
+	var keys = ['description', 'plural', 'base', 'strict', 'hidden',
+		'validations', 'methods', 'mixins', 'admin'
 	];
 
 	keys.forEach(function (key) {
-		result[key] = _.get(model.definition.settings, key);
+		result[key] = clone(_.get(model.definition.settings, key));
 	});
 
-	result['relations'] = model.relations;
+	result['relations'] = clone(model.relations);
 
 	if (!result.admin) {
 		result.admin = {
-			defaultProperty: 'id',
-			listProperties: [],
-			editProperties: [],
-			viewProperties: []
+			defaultProperty: 'id'
 		};
 	}
 
@@ -69,7 +77,6 @@ module.exports = function getModelInfo(server, modelName) {
 		result.properties[prop].admin = {};
 
 		var type = result.properties[prop].type;
-
 		if (type === 'Boolean') {
 			type = 'checkbox';
 		}
@@ -77,6 +84,9 @@ module.exports = function getModelInfo(server, modelName) {
 			type = 'text';
 		}
 		if (type === 'Object') {
+			type = 'textarea';
+		}
+		if (type === 'Array') {
 			type = 'textarea';
 		}
 		if (type === 'Date') {

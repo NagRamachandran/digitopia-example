@@ -21138,7 +21138,9 @@ function GetJQueryPlugin(classname,obj) {
 
 		this.settings = $.extend({
 			model: this.element.data('model'),
-			searchProperty: this.element.data('search-property')
+			searchProperty: this.element.data('search-property'),
+			endpoint: this.element.data('endpoint'),
+			mode: this.element.data('mode')
 		}, options || {});
 
 		this.start = function () {
@@ -21170,7 +21172,6 @@ function GetJQueryPlugin(classname,obj) {
 				}
 			});
 
-
 			this.element.on('click', '.search-button', function (e) {
 				e.preventDefault();
 				var q = self.element.find('[name="q"]').val();
@@ -21201,7 +21202,7 @@ function GetJQueryPlugin(classname,obj) {
 		this.delete = function () {
 			$.ajax({
 					method: 'delete',
-					url: self.element.data('endpoint')
+					url: self.settings.endpoint
 				}).done(function (data) {
 					loadPage('/admin/views/' + self.settings.model + '/index')
 				})
@@ -21214,16 +21215,21 @@ function GetJQueryPlugin(classname,obj) {
 			var form = self.element.find('input,textarea,select').serializeJSON({
 				checkboxUncheckedValue: 'false',
 				parseBooleans: true
-			})
+			});
+
+			var method = self.settings.mode === 'edit' ? 'put' : 'post';
+
+			flashAjaxStatus('info', 'saving...');
+
 			$.ajax({
-					method: 'put',
-					url: self.element.data('endpoint'),
+					method: method,
+					url: self.settings.endpoint,
 					data: form
 				}).done(function (data) {
 					loadPage('/admin/views/' + self.settings.model + '/' + data.id + '/view');
 				})
 				.fail(function (jqXHR, textStatus, errorThrown) {
-					flashAjaxStatus('error', 'Could not delete: ' + textStatus)
+					flashAjaxStatus('error', 'Could not ' + method + 'instance: ' + textStatus)
 				})
 		};
 	}
@@ -21403,9 +21409,13 @@ function didLogOut() {
 })(jQuery);
 
 function flashAjaxStatus(level, message) {
-	$('#ajax-status').empty().html(level + ": " + message);
+
+	var alert = '<div class="alert alert-' + level + '">' + message + '</div>';
+
+	$('#ajax-status').empty().html(alert);
+
 	setTimeout(function () {
-		$('#ajax-status').empty()
+		$('#ajax-status').empty();
 	}, 2000);
 }
 ;(function ($) {

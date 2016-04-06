@@ -1,7 +1,7 @@
 extends ../admin-wrapper
 
 block content
-	section(data-jsclass="adminListController" data-id= instance.id data-model= model data-endpoint= endpoint data-search-property= schema.admin.listProperties[0])
+	section(data-jsclass="adminListController" data-mode= mode data-id= instance.id data-model= model data-endpoint= endpoint data-search-property= schema.admin.listProperties[0])
 		.container-fluid
 			.row
 				.col-xs-12
@@ -11,9 +11,10 @@ block content
 								if mode === 'view'
 									i.edit-button.fa.fa-pencil-square-o.fa-2x(data-id= instance.id)
 								else
-									i.instance-select.fa.fa-eye.fa-2x(data-id= instance.id)
-
-								i.delete-button.fa.fa-times-circle.fa-2x.text-danger(data-id= instance.id)
+									if mode !== 'add'
+										i.instance-select.fa.fa-eye.fa-2x(data-id= instance.id)
+								if mode !== 'add'
+									i.delete-button.fa.fa-times-circle.fa-2x.text-danger(data-id= instance.id)
 							i.list-button.fa.fa-list.fa-2x
 							= ' Editing ' + model + ' row ' + instance.id
 						.panel-body
@@ -25,7 +26,8 @@ block content
 										.col-sm-9
 											a(href= parent.url)= parent.description
 								
-								for property in schema.admin.viewProperties
+								- var properties = mode === 'view' ? schema.admin.viewProperties : schema.admin.editProperties
+								for property in properties
 									if property !== 'id'	
 										.form-group
 											label.col-sm-3.control-label(for= property)
@@ -35,7 +37,7 @@ block content
 												- var options = schema.properties[property].admin.options
 												- var dataType = schema.properties[property].type;
 												- var val = instance[property]
-												if dataType === 'Object' && val
+												if (dataType === 'Object' || dataType === 'Array' ) && val
 													- val = JSON.stringify(val,null,2)
 													
 												if mode === 'view'

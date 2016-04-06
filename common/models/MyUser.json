@@ -5,9 +5,27 @@
   "options": {
     "validateUpsert": true
   },
+  "admin": {
+    "defaultProperty": "email",
+    "listProperties": [
+      "email",
+      "username"
+    ],
+    "editProperties": [
+      "email",
+      "username",
+      "password"
+    ]
+  },
   "properties": {},
   "validations": [],
-  "relations": {},
+  "relations": {
+    "typetest": {
+      "type": "hasOne",
+      "model": "TypeTest",
+      "foreignKey": "ownerId"
+    }
+  },
   "acls": [{
     "accessType": "EXECUTE",
     "principalType": "ROLE",
@@ -21,9 +39,5 @@
     "permission": "ALLOW",
     "property": "*"
   }],
-  "methods": {},
-  "admin": {
-    "defaultProperty": "email",
-    "listProperties": ["email", "username", "emailVerified"]
-  }
+  "methods": {}
 }

@@ -1,0 +1,43 @@
+{
+  "name": "TypeTest",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "aString": {
+      "type": "string"
+    },
+    "aNumber": {
+      "type": "number"
+    },
+    "aBoolean": {
+      "type": "boolean"
+    },
+    "anObject": {
+      "type": "object"
+    },
+    "anArray": {
+      "type": [
+        "string"
+      ]
+    },
+    "aDate": {
+      "type": "date"
+    },
+    "aGeopoint": {
+      "type": "geopoint"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "owner": {
+      "type": "belongsTo",
+      "model": "MyUser",
+      "foreignKey": "ownerId"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}

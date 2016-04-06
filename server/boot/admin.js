@@ -73,7 +73,7 @@ module.exports = function (server) {
 
 	function doTemplate(mode, req, res, next) {
 		var model = req.params[0];
-		var id = req.params[1];
+		var id = req.params[1] ? req.params[1] : -1;
 
 		var schema = getModelInfo(server, model);
 
@@ -81,10 +81,15 @@ module.exports = function (server) {
 		var parentRelations = [];
 		var includes = [];
 
-		var endpoint = req.protocol + '://' + req.get('host') + '/api/' + model + 's/' + id;
+		var modelPlural = model + 's';
+
+		var endpoint = req.protocol + '://' + req.get('host') + '/api/' + modelPlural;
+		if (id !== -1) {
+			endpoint += '/' + id;
+		}
 
 		for (var relation in schema.relations) {
-			if (schema.relations[relation].type === 'hasMany') {
+			if (schema.relations[relation].type === 'hasMany' || schema.relations[relation].type === 'hasOne') {
 				var rel = schema.relations[relation];
 				childRelations.push(rel);
 				includes.push(relation);
@@ -111,48 +116,53 @@ module.exports = function (server) {
 			if (err) {
 				res.status(500).send('error ' + err);
 			}
-			if (!theInstance) {
+			if (id !== -1 && !theInstance) {
 				res.status(404).send('not found');
 			}
 
 			var parents = [];
-			for (var i in parentRelations) {
-				var relation = parentRelations[i];
-				var related = theInstance[relation.name]();
-				if (related) {
-					if (relation.polymorphic) {
-						var relatedModel = theInstance[relation.polymorphic.discriminator];
+			var children = [];
+
+			if (theInstance) {
+				for (var i in parentRelations) {
+					var relation = parentRelations[i];
+					var related = theInstance[relation.name]();
+					if (related) {
+						var relatedModel = relation.polymorphic ? theInstance[relation.polymorphic.discriminator] : relation.model;
 						var relatedSchema = getModelInfo(server, relatedModel);
 						parents.push({
 							name: relation.name,
 							model: relatedModel,
-							url: '/admin/views/' + theInstance[relation.polymorphic.discriminator] + '/' + related.id + '/view',
+							type: relation.type,
+							url: '/admin/views/' + relatedModel + '/' + related.id + '/view',
 							description: related[relatedSchema.admin.defaultProperty]
 						});
 					}
-					else {}
 				}
-			}
 
-			var children = [];
-			for (var i in childRelations) {
-				var relation = childRelations[i];
-				var related = theInstance[relation.name]();
-				if (related) {
-					var relatedModel = relation.modelTo.definition.name;
-					var relatedSchema = getModelInfo(server, relatedModel);
+				for (var i in childRelations) {
+					var relation = childRelations[i];
+					var related = theInstance[relation.name]();
+					if (related) {
+						var relatedModel = relation.modelTo;
+						var relatedSchema = getModelInfo(server, relatedModel);
 
-					for (var j = 0; j < related.length; j++) {
-						var child = related[j];
-						var item = {
-							name: relation.name,
-							model: relatedModel,
-							url: '/admin/views/' + relatedModel + '/' + child.id + '/view',
-							description: child[relatedSchema.admin.defaultProperty]
+						for (var j = 0; j < related.length; j++) {
+							var child = related[j];
+							var item = {
+								name: relation.name,
+								model: relatedModel,
+								type: relation.type,
+								url: '/admin/views/' + relatedModel + '/' + child.id + '/view',
+								description: child[relatedSchema.admin.defaultProperty]
+							}
+							children.push(item);
 						}
-						children.push(item);
 					}
 				}
+			}
+			else {
+				theInstance = {};
 			}
 
 			res.render('admin/views/instance.jade', {
