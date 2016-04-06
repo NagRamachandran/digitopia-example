@@ -121,7 +121,7 @@ module.exports = function (server) {
 			}
 
 			var parents = [];
-			var children = [];
+			var children = {};
 
 			if (theInstance) {
 				for (var i in parentRelations) {
@@ -143,6 +143,23 @@ module.exports = function (server) {
 				for (var i in childRelations) {
 					var relation = childRelations[i];
 					var related = theInstance[relation.name]();
+
+					// compute url if child does not exist or hasMany
+					if (relation.multiple || !related) {
+						var createChild = '/admin/views/' + relation.modelTo + '/add?' + relation.keyTo + '=' + id;
+						if (relation.polymorphic) {
+							createChild += '&' + relation.polymorphic.discriminator + '=' + model;
+						}
+					}
+
+					if (!children[relation.name]) {
+						children[relation.name] = {
+							relation: relation,
+							createUrl: createChild,
+							children: []
+						};
+					}
+
 					if (related) {
 						var relatedModel = relation.modelTo;
 						var relatedSchema = getModelInfo(server, relatedModel);
@@ -156,7 +173,8 @@ module.exports = function (server) {
 								url: '/admin/views/' + relatedModel + '/' + child.id + '/view',
 								description: child[relatedSchema.admin.defaultProperty]
 							}
-							children.push(item);
+
+							children[relation.name].children.push(item);
 						}
 					}
 				}
@@ -174,7 +192,8 @@ module.exports = function (server) {
 				'parentRelations': parentRelations,
 				'endpoint': endpoint,
 				'parents': parents,
-				'children': children
+				'children': children,
+				'query': req.query
 			});
 		});
 	}

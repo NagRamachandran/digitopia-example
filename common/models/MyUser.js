@@ -34,6 +34,12 @@ module.exports = function (MyUser) {
 
 		// on Upload make versions for various UI uses
 		var versions = {
+			'background': [{
+				suffix: 'thumb',
+				quality: 90,
+				maxHeight: 300,
+				maxWidth: 300,
+			}],
 			'photo': [{
 				suffix: 'large',
 				quality: 90,

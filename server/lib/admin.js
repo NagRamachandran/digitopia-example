@@ -57,6 +57,10 @@ module.exports = function getModelInfo(server, modelName) {
 
 	var populateList, populateEdit, populateView;
 
+	if (!result.admin.helpers) {
+		result.admin.helpers = [];
+	}
+
 	if (!result.admin.listProperties) {
 		result.admin.listProperties = [];
 		populateList = true;

@@ -62,5 +62,5 @@ function flashAjaxStatus(level, message) {
 
 	setTimeout(function () {
 		$('#ajax-status').empty();
-	}, 2000);
+	}, 4000);
 }

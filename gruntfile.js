@@ -25,6 +25,20 @@ module.exports = function (grunt) {
 		'assets/css/*.css'
 	];
 
+	var copyCommand = [{
+		expand: true,
+		cwd: 'node_modules/bootstrap/',
+		src: ['fonts/*'],
+		dest: 'client/dist/',
+		filter: 'isFile'
+	}, {
+		expand: true,
+		cwd: 'node_modules/digitopia/',
+		src: ['images/*'],
+		dest: 'client/digitopia/',
+		filter: 'isFile'
+	}];
+
 	var allFiles = [];
 	allFiles = allFiles.concat(
 		jsFiles,
@@ -36,6 +50,11 @@ module.exports = function (grunt) {
 		jsDistDir: 'client/dist/js/',
 		cssDistDir: 'client/dist/css/',
 		pkg: grunt.file.readJSON('package.json'),
+		copy: {
+			main: {
+				files: copyCommand
+			}
+		},
 		less: {
 			boostrap: {
 				files: {
@@ -92,6 +111,7 @@ module.exports = function (grunt) {
 		}
 	});
 
+	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-contrib-less');
 	grunt.loadNpmTasks('grunt-contrib-stylus');
 	grunt.loadNpmTasks('grunt-contrib-concat');
@@ -100,6 +120,7 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 
 	grunt.registerTask('default', [
+		'copy',
 		'less',
 		'stylus',
 		'concat',
@@ -108,6 +129,7 @@ module.exports = function (grunt) {
 	]);
 
 	grunt.registerTask('devel', [
+		'copy',
 		'less',
 		'stylus',
 		'concat',

@@ -21131,7 +21131,7 @@ function GetJQueryPlugin(classname,obj) {
 
 })(window, document);
 ;(function ($) {
-	function adminListController(elem, options) {
+	function adminEditController(elem, options) {
 		this.element = $(elem);
 
 		var self = this;
@@ -21204,10 +21204,11 @@ function GetJQueryPlugin(classname,obj) {
 					method: 'delete',
 					url: self.settings.endpoint
 				}).done(function (data) {
-					loadPage('/admin/views/' + self.settings.model + '/index')
+					loadPage('/admin/views/' + self.settings.model + '/index');
 				})
 				.fail(function (jqXHR, textStatus, errorThrown) {
-					flashAjaxStatus('error', 'Could not delete: ' + textStatus)
+					var error = jqXHR.responseText;
+					flashAjaxStatus('error', 'Could not delete: ' + error);
 				})
 		};
 
@@ -21229,12 +21230,13 @@ function GetJQueryPlugin(classname,obj) {
 					loadPage('/admin/views/' + self.settings.model + '/' + data.id + '/view');
 				})
 				.fail(function (jqXHR, textStatus, errorThrown) {
-					flashAjaxStatus('error', 'Could not ' + method + 'instance: ' + textStatus)
+					var response = JSON.parse(jqXHR.responseText);
+					flashAjaxStatus('danger', 'Could not ' + method + 'instance: ' + response.error.message);
 				})
 		};
 	}
 
-	$.fn.adminListController = GetJQueryPlugin('adminListController', adminListController);
+	$.fn.adminEditController = GetJQueryPlugin('adminEditController', adminEditController);
 
 })(jQuery);
 ;(function ($) {
@@ -21416,7 +21418,7 @@ function flashAjaxStatus(level, message) {
 
 	setTimeout(function () {
 		$('#ajax-status').empty();
-	}, 2000);
+	}, 4000);
 }
 ;(function ($) {
 	function loginController(elem, options) {

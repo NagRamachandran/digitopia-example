@@ -1,7 +1,7 @@
 extends ../admin-wrapper
 
 block content
-	section(data-jsclass="adminListController" data-mode= mode data-id= instance.id data-model= model data-endpoint= endpoint data-search-property= schema.admin.listProperties[0])
+	section(data-jsclass="adminEditController" data-mode= mode data-id= instance.id data-model= model data-endpoint= endpoint data-search-property= schema.admin.listProperties[0])
 		.container-fluid
 			.row
 				.col-xs-12
@@ -16,7 +16,7 @@ block content
 								if mode !== 'add'
 									i.delete-button.fa.fa-times-circle.fa-2x.text-danger(data-id= instance.id)
 							i.list-button.fa.fa-list.fa-2x
-							= ' Editing ' + model + ' row ' + instance.id
+							!= ' Editing <strong>' + model + '</strong> row <strong>' + instance.id + '</strong>'
 						.panel-body
 							form.form.form-horizontal(method="POST" action= endpoint)
 								for parent in parents
@@ -24,7 +24,8 @@ block content
 										label.col-sm-3.control-label
 											= parent.name
 										.col-sm-9
-											a(href= parent.url)= parent.description
+											.readonly
+												a(href= parent.url)= parent.description
 								
 								- var properties = mode === 'view' ? schema.admin.viewProperties : schema.admin.editProperties
 								for property in properties
@@ -37,14 +38,19 @@ block content
 												- var options = schema.properties[property].admin.options
 												- var dataType = schema.properties[property].type;
 												- var val = instance[property]
+												
+												if query[property]
+													- val = query[property]
+													
 												if (dataType === 'Object' || dataType === 'Array' ) && val
 													- val = JSON.stringify(val,null,2)
 													
 												if mode === 'view'
-													if dataType === 'Object' && val
-														pre= val
-													else
-														= val
+													.readonly
+														if dataType === 'Object' && val
+															pre= val
+														else
+															= val
 												else
 													if type === 'textarea'
 														textarea.form-control(name= property)= val
@@ -54,13 +60,36 @@ block content
 														input.form-control(type= type name= property value= val)
 															
 								if mode === 'view'
-									for child in children
+									for helper in schema.admin.helpers
 										.form-group
 											label.col-sm-3.control-label
-												= child.name
+												= helper.name
 											.col-sm-9
-												a(href= child.url)= child.description
+												if helper.type === 'upload'
+													- var endpoint = helper.endpoint
+													- var property = helper.property
+													- var photo = getUploadForProperty(property,instance.uploads(),null,true)
+													.upload-viewport.text-center(data-jsclass="digitopiaViewport" data-crop="false" data-blowup="false")
+														img(data-jsclass="digitopiaLazyImg" data-lazy-src= photo.url)
+														.dropzone(data-jsclass="dropzoneController" data-endpoint= endpoint)
+															.dz-message.
+																Drop your photo here<br><small>(or click to upload)</small>
+										
+									for relationship in children
+										.form-group
+											label.col-sm-3.control-label
+												= relationship.relation.name
+												if relationship.createUrl
+													| &nbsp;
+													a.fa.fa-plus.fa-2(href= relationship.createUrl)
+														
+											.col-sm-9
+												.readonly
+													for child in relationship.children
+														.related-instance
+															a(href= child.url)= child.description
 												
+													
 								if mode !== 'view'
 									.form-group
 										.col-sm-3
