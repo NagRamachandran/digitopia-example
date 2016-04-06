@@ -79,7 +79,10 @@
 		};
 
 		this.save = function () {
-			var form = self.element.find('input,textarea,select').serializeArray()
+			var form = self.element.find('input,textarea,select').serializeJSON({
+				checkboxUncheckedValue: 'false',
+				parseBooleans: true
+			})
 			$.ajax({
 					method: 'put',
 					url: self.element.data('endpoint'),

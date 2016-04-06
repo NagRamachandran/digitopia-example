@@ -47,7 +47,7 @@ block content
 													if type === 'textarea'
 														textarea.form-control(name= property)= val
 													else if type === 'checkbox'
-														input.form-control(type= type name= property value= val checked= val)
+														input.form-control(type= type name= property value= "true" checked= val)
 													else
 														input.form-control(type= type name= property value= val)
 															
