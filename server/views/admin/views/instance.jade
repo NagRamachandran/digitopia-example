@@ -1,7 +1,7 @@
 extends ../admin-wrapper
 
 block content
-	section(data-jsclass="adminListController" data-id= instance.id data-model= model data-search-property= schema.admin.listProperties[0])
+	section(data-jsclass="adminListController" data-id= instance.id data-model= model data-endpoint= endpoint data-search-property= schema.admin.listProperties[0])
 		.container-fluid
 			.row
 				.col-xs-12
@@ -32,10 +32,25 @@ block content
 												= property
 											.col-sm-9
 												- var type = schema.properties[property].admin.inputType
+												- var options = schema.properties[property].admin.options
+												- var dataType = schema.properties[property].type;
+												- var val = instance[property]
+												if dataType === 'Object' && val
+													- val = JSON.stringify(val,null,2)
+													
 												if mode === 'view'
-													= instance[property]
+													if dataType === 'Object' && val
+														pre= val
+													else
+														= val
 												else
-													input.form-control(type= type name= property value= instance[property])
+													if type === 'textarea'
+														textarea.form-control(name= property)= val
+													else if type === 'checkbox'
+														input.form-control(type= type name= property value= val checked= val)
+													else
+														input.form-control(type= type name= property value= val)
+															
 								if mode === 'view'
 									for child in children
 										.form-group

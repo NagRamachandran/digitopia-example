@@ -77,6 +77,9 @@ module.exports = function getModelInfo(server, modelName) {
 			type = 'text';
 		}
 		if (type === 'Object') {
+			type = 'textarea';
+		}
+		if (type === 'Date') {
 			type = 'text';
 		}
 

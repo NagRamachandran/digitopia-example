@@ -7,7 +7,6 @@
 		this.settings = $.extend({
 			model: this.element.data('model'),
 			searchProperty: this.element.data('search-property')
-
 		}, options || {});
 
 		this.start = function () {
@@ -29,12 +28,16 @@
 
 			this.element.on('click', '.save-button', function (e) {
 				e.preventDefault();
+				self.save();
 			});
 
-			this.element.on('click', '.delete-button', function (e) {
-				e.preventDefault();
-				alert('delete');
+			$(this.element.find('.delete-button')).confirmation({
+				placement: 'left',
+				'onConfirm': function () {
+					self.delete();
+				}
 			});
+
 
 			this.element.on('click', '.search-button', function (e) {
 				e.preventDefault();
@@ -61,6 +64,32 @@
 			this.element.off('click', '.save-button');
 			this.element.off('click', '.search-button');
 			this.element.off('click', '.instance-select');
+		};
+
+		this.delete = function () {
+			$.ajax({
+					method: 'delete',
+					url: self.element.data('endpoint')
+				}).done(function (data) {
+					loadPage('/admin/views/' + self.settings.model + '/index')
+				})
+				.fail(function (jqXHR, textStatus, errorThrown) {
+					flashAjaxStatus('error', 'Could not delete: ' + textStatus)
+				})
+		};
+
+		this.save = function () {
+			var form = self.element.find('input,textarea,select').serializeArray()
+			$.ajax({
+					method: 'put',
+					url: self.element.data('endpoint'),
+					data: form
+				}).done(function (data) {
+					loadPage('/admin/views/' + self.settings.model + '/' + data.id + '/view');
+				})
+				.fail(function (jqXHR, textStatus, errorThrown) {
+					flashAjaxStatus('error', 'Could not delete: ' + textStatus)
+				})
 		};
 	}
 

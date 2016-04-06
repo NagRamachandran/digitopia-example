@@ -81,7 +81,7 @@ module.exports = function (server) {
 		var parentRelations = [];
 		var includes = [];
 
-		var endpoint = req.protocol + '://' + req.get('host') + req.originalUrl;
+		var endpoint = req.protocol + '://' + req.get('host') + '/api/' + model + 's/' + id;
 
 		for (var relation in schema.relations) {
 			if (schema.relations[relation].type === 'hasMany') {
@@ -154,7 +154,6 @@ module.exports = function (server) {
 					}
 				}
 			}
-
 
 			res.render('admin/views/instance.jade', {
 				'mode': mode,
