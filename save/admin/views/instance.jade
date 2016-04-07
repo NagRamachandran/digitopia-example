@@ -24,41 +24,44 @@ block content
 										label.col-sm-3.control-label
 											= parent.name
 										.col-sm-9
-											.readonly
+											.input-margins
 												a(href= parent.url)= parent.description
 								
 								- var properties = mode === 'view' ? schema.admin.viewProperties : schema.admin.editProperties
 								for property in properties
-									if property !== 'id'	
-										.form-group
-											label.col-sm-3.control-label(for= property)
-												= property
-											.col-sm-9
-												- var type = schema.properties[property].admin.inputType
-												- var options = schema.properties[property].admin.options
-												- var dataType = schema.properties[property].type;
-												- var val = instance[property]
+									.form-group
+										label.col-sm-3.control-label(for= property)
+											= property
+										.col-sm-9
+											- var type = schema.properties[property].admin.inputType
+											- var options = schema.properties[property].admin.options
+											- var dataType = schema.properties[property].type;
+											- var val = instance[property]
+											
+											if query[property]
+												- val = query[property]
 												
-												if query[property]
-													- val = query[property]
-													
-												if (dataType === 'Object' || dataType === 'Array' ) && val
-													- val = JSON.stringify(val,null,2)
-													
-												if mode === 'view'
-													.readonly
-														if dataType === 'Object' && val
-															pre= val
-														else
-															= val
+											if (dataType === 'Object' || dataType === 'Array' ) && val
+												- val = JSON.stringify(val,null,2)
+												
+											if mode === 'view'
+												.input-margins
+													if dataType === 'Object' && val
+														pre= val
+													else
+														= val
+											else
+												if type === 'textarea'
+													textarea.form-control(name= property)= val
+												else if type === 'checkbox'
+													.input-margins
+														input(type= type name= property value= "true" checked= val)
 												else
-													if type === 'textarea'
-														textarea.form-control(name= property)= val
-													else if type === 'checkbox'
-														input.form-control(type= type name= property value= "true" checked= val)
+													if query[property] || property === 'id'
+														input.form-control(type= type name= property value= val readonly)
 													else
 														input.form-control(type= type name= property value= val)
-															
+
 								if mode === 'view'
 									for helper in schema.admin.helpers
 										.form-group
@@ -84,7 +87,7 @@ block content
 													a.fa.fa-plus.fa-2(href= relationship.createUrl)
 														
 											.col-sm-9
-												.readonly
+												.input-margins
 													for child in relationship.children
 														.related-instance
 															a(href= child.url)= child.description

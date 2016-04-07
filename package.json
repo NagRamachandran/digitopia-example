@@ -13,6 +13,7 @@
     "cookie-parser": "^1.4.1",
     "cors": "^2.5.2",
     "digitopia": "git+https://github.com/mediapolis/digitopia.git",
+    "digitopia-admin": "git+https://github.com/mediapolis/digitopia-admin.git",
     "docker-logger": "0.0.11",
     "fs": "0.0.2",
     "jade": "^1.11.0",

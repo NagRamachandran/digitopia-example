@@ -1,10 +1,11 @@
-var getModelInfo = require('../lib/admin.js');
 var getCurrentUser = require('../middleware/context-currentUser');
 var ensureLoggedIn = require('../middleware/context-ensureLoggedIn');
 var ensureAdminUser = require('../middleware/context-ensureAdminUser');
 var async = require('async');
 
 module.exports = function (server) {
+	return;
+
 	var router = server.loopback.Router();
 
 	var userAuth = [getCurrentUser(), ensureAdminUser()];
@@ -14,7 +15,7 @@ module.exports = function (server) {
 			res.sendStatatus(404);
 		}
 		else {
-			var schema = getModelInfo(server, req.params.model);
+			var schema = getModelInfo(req.params.model);
 			res.send(schema);
 		}
 	});
@@ -32,7 +33,7 @@ module.exports = function (server) {
 	// list instances in model
 	router.get(/^\/admin\/views\/([^\/]*)\/index$/, userAuth, function (req, res, next) {
 		var model = req.params[0];
-		var schema = getModelInfo(server, model);
+		var schema = getModelInfo(model);
 
 		var q;
 
@@ -75,7 +76,7 @@ module.exports = function (server) {
 		var model = req.params[0];
 		var id = req.params[1] ? req.params[1] : -1;
 
-		var schema = getModelInfo(server, model);
+		var schema = getModelInfo(model);
 
 		var childRelations = [];
 		var parentRelations = [];
@@ -129,7 +130,7 @@ module.exports = function (server) {
 					var related = theInstance[relation.name]();
 					if (related) {
 						var relatedModel = relation.polymorphic ? theInstance[relation.polymorphic.discriminator] : relation.model;
-						var relatedSchema = getModelInfo(server, relatedModel);
+						var relatedSchema = getModelInfo(relatedModel);
 						parents.push({
 							name: relation.name,
 							model: relatedModel,
@@ -162,7 +163,7 @@ module.exports = function (server) {
 
 					if (related) {
 						var relatedModel = relation.modelTo;
-						var relatedSchema = getModelInfo(server, relatedModel);
+						var relatedSchema = getModelInfo(relatedModel);
 
 						for (var j = 0; j < related.length; j++) {
 							var child = related[j];
@@ -199,4 +200,121 @@ module.exports = function (server) {
 	}
 
 	server.use(router);
+
+
+	var utils = require('loopback-datasource-juggler/lib/utils');
+	var _ = require('lodash');
+
+	function clone(obj) {
+		if (!obj) {
+			return obj;
+		}
+		return JSON.parse(JSON.stringify(obj));
+	}
+
+	function formatProperties(properties) {
+		var result = {};
+		for (var key in properties) {
+			result[key] = {};
+			for (var prop in properties[key]) {
+				if (prop !== 'type') {
+					result[key][prop] = properties[key][prop];
+				}
+				else {
+					if (properties[key].type instanceof Array) {
+						result[key]['type'] = 'Array';
+					}
+					else {
+						result[key]['type'] = properties[key].type.name;
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+	function getModelInfo(modelName) {
+
+		var model = server.models[modelName];
+
+		var result = {
+			id: model.definition.name,
+			name: model.definition.name,
+			properties: formatProperties(model.definition.properties)
+		};
+
+		var keys = ['description', 'plural', 'strict', 'hidden', 'validations', 'methods', 'mixins', 'admin'];
+
+		keys.forEach(function (key) {
+			result[key] = clone(_.get(model.definition.settings, key));
+		});
+
+		result['relations'] = clone(model.relations);
+
+		if (!result.admin) {
+			result.admin = {
+				defaultProperty: 'id'
+			};
+		}
+
+		var populateList, populateEdit, populateView;
+
+		if (!result.admin.helpers) {
+			result.admin.helpers = [];
+		}
+
+		if (!result.admin.listProperties) {
+			result.admin.listProperties = [];
+			populateList = true;
+		}
+
+		if (!result.admin.editProperties) {
+			result.admin.editProperties = [];
+			populateEdit = true;
+		}
+
+		if (!result.admin.viewProperties) {
+			result.admin.viewProperties = [];
+			populateView = true;
+		}
+
+		for (var prop in result.properties) {
+
+			result.properties[prop].admin = {};
+
+			var type = result.properties[prop].type;
+			if (type === 'Boolean') {
+				type = 'checkbox';
+			}
+			if (type === 'String') {
+				type = 'text';
+			}
+			if (type === 'Object') {
+				type = 'textarea';
+			}
+			if (type === 'Array') {
+				type = 'textarea';
+			}
+			if (type === 'Date') {
+				type = 'text';
+			}
+
+			result.properties[prop].admin.inputType = type;
+
+			if (populateList) {
+				result.admin.listProperties.push(prop);
+			}
+
+			if (populateEdit) {
+				result.admin.editProperties.push(prop);
+			}
+
+			if (populateView) {
+				result.admin.viewProperties.push(prop);
+			}
+		}
+
+		return result;
+	};
+
 };

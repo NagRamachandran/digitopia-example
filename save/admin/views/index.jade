@@ -24,6 +24,6 @@ block content
 						for instance in instances
 							tr.instance-select(data-id= instance.id)
 								for property in schema.admin.listProperties
-									td= instance[property]
+									td.input-margins= instance[property]
 					.panel-footer.text-right
 						| pagination
