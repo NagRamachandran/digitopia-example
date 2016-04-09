@@ -7,10 +7,46 @@
   },
   "properties": {
     "aString": {
-      "type": "string"
+      "type": "string",
+      "required": true,
+      "admin": {
+        "validate": {
+          "min-length": 5,
+          "max-length": 30
+        }
+      }
+    },
+    "someText": {
+      "type": "string",
+      "admin": {
+        "inputType": "textarea"
+      }
+    },
+    "anEmail": {
+      "type": "string",
+      "admin": {
+        "validate": {
+          "email": true
+        }
+      }
+    },
+    "aUrl": {
+      "type": "string",
+      "admin": {
+        "validate": {
+          "url": true
+        }
+      }
     },
     "aNumber": {
-      "type": "number"
+      "type": "number",
+      "admin": {
+        "validate": {
+          "integer": true,
+          "min": 100,
+          "max": 200
+        }
+      }
     },
     "aBoolean": {
       "type": "boolean"
@@ -26,6 +62,12 @@
     "aDate": {
       "type": "date"
     },
+    "aDateTime": {
+      "type": "date",
+      "admin": {
+        "inputType": "datetime"
+      }
+    },
     "options": {
       "type": "string",
       "admin": {
@@ -37,6 +79,30 @@
       "admin": {
         "options": ["one", "two", "three"],
         "multiple": true
+      }
+    },
+    "aCreditCard": {
+      "type": "string",
+      "admin": {
+        "validate": {
+          "cc-number": true
+        }
+      }
+    },
+    "aCreditCardExp": {
+      "type": "string",
+      "admin": {
+        "validate": {
+          "cc-exp": true
+        }
+      }
+    },
+    "aCreditCardCvc": {
+      "type": "string",
+      "admin": {
+        "validate": {
+          "cc-cvc": true
+        }
       }
     }
   },
