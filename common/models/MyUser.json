@@ -16,6 +16,7 @@
       "username",
       "password"
     ],
+    "includeRelations": ["uploads", "typetest"],
     "helpers": [{
       "type": "upload",
       "name": "Upload Photo",

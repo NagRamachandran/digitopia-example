@@ -26,8 +26,18 @@
     "aDate": {
       "type": "date"
     },
-    "aGeopoint": {
-      "type": "geopoint"
+    "options": {
+      "type": "string",
+      "admin": {
+        "options": ["one", "two", "three"]
+      }
+    },
+    "optionsMultiple": {
+      "type": ["string"],
+      "admin": {
+        "options": ["one", "two", "three"],
+        "multiple": true
+      }
     }
   },
   "validations": [],
