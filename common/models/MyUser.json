@@ -16,18 +16,24 @@
       "username",
       "password"
     ],
-    "includeRelations": ["uploads", "typetest"],
-    "helpers": [{
-      "type": "upload",
-      "name": "Upload Photo",
-      "property": "photo",
-      "endpoint": "/api/MyUsers/me/upload/photo"
-    }, {
-      "type": "upload",
-      "name": "Upload Background",
-      "property": "background",
-      "endpoint": "/api/MyUsers/me/upload/background"
-    }]
+    "includeRelations": [
+      "uploads",
+      "typetest"
+    ],
+    "helpers": [
+      {
+        "type": "upload",
+        "name": "Upload Photo",
+        "property": "photo",
+        "endpoint": "/api/MyUsers/me/upload/photo"
+      },
+      {
+        "type": "upload",
+        "name": "Upload Background",
+        "property": "background",
+        "endpoint": "/api/MyUsers/me/upload/background"
+      }
+    ]
   },
   "properties": {},
   "validations": [],
@@ -38,18 +44,21 @@
       "foreignKey": "ownerId"
     }
   },
-  "acls": [{
-    "accessType": "EXECUTE",
-    "principalType": "ROLE",
-    "principalId": "$owner",
-    "permission": "ALLOW",
-    "property": "upload"
-  }, {
-    "accessType": "*",
-    "principalType": "ROLE",
-    "principalId": "admin",
-    "permission": "ALLOW",
-    "property": "*"
-  }],
+  "acls": [
+    {
+      "accessType": "EXECUTE",
+      "principalType": "ROLE",
+      "principalId": "$owner",
+      "permission": "ALLOW",
+      "property": "upload"
+    },
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "admin",
+      "permission": "ALLOW",
+      "property": "*"
+    }
+  ],
   "methods": {}
 }

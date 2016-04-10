@@ -1,1 +1,6 @@
-{}
+{
+  "TypeTestLookup": {
+    "dataSource": "db",
+    "public": true
+  }
+}

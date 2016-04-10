@@ -71,13 +71,23 @@
     "options": {
       "type": "string",
       "admin": {
-        "options": ["one", "two", "three"]
+        "options": [
+          "one",
+          "two",
+          "three"
+        ]
       }
     },
     "optionsMultiple": {
-      "type": ["string"],
+      "type": [
+        "string"
+      ],
       "admin": {
-        "options": ["one", "two", "three"],
+        "options": [
+          "one",
+          "two",
+          "three"
+        ],
         "multiple": true
       }
     },
@@ -112,8 +122,16 @@
       "type": "belongsTo",
       "model": "MyUser",
       "foreignKey": "ownerId"
+    },
+    "typeTestLookup": {
+      "type": "belongsTo",
+      "model": "TypeTestLookup",
+      "foreignKey": ""
     }
   },
   "acls": [],
-  "methods": {}
+  "methods": {},
+  "admin": {
+    "defaultProperty": "aString"
+  }
 }
