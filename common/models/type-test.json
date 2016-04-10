@@ -132,6 +132,9 @@
   "acls": [],
   "methods": {},
   "admin": {
-    "defaultProperty": "aString"
+    "defaultProperty": "aString",
+    "listProperties": [
+      "aString"
+    ]
   }
 }
