@@ -25,10 +25,10 @@ module.exports = function () {
 				principalId: user.id
 			}, function (err, roles) {
 
-				var loopbackContext = loopback.getCurrentContext();
-				loopbackContext.set('currentUser', user);
-				loopbackContext.set('ip', req.ip);
-				loopbackContext.set('currentUserRoles', roles);
+				var reqContext = req.getCurrentContext();
+				reqContext.set('currentUser', user);
+				reqContext.set('ip', req.ip);
+				reqContext.set('currentUserRoles', roles);
 				next();
 			});
 		});

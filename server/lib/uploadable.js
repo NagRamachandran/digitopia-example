@@ -52,7 +52,7 @@ module.exports = function () {
 
 		// upload a file and store metadata in an Upload instance for MyModel
 		MyModel.upload = function (id, property, ctx, cb) {
-			var loopbackContext = loopback.getCurrentContext();
+			var reqContext = ctx.req.getCurrentContext();
 
 			// process the upload
 			MyModel.findById(ctx.args.id, function (err, instance) {
@@ -114,8 +114,8 @@ module.exports = function () {
 // versions: array specifying the resize specs for the upload fileSet
 
 function uploadable(model, instance, property, ctx, versionsByProperty, next) {
-	var loopbackContext = loopback.getCurrentContext();
-	var currentUser = loopbackContext.get('currentUser');
+	var reqContext = ctx.req.getCurrentContext();
+	var currentUser = reqContext.get('currentUser');
 	var req = ctx.req;
 	var res = ctx.res;
 	var params = req.query.id ? req.query : req.body;

@@ -41,6 +41,9 @@ app.use(loopback.token({
   params: ['access_token']
 }));
 
+var myContext = require('./middleware/context-myContext')();
+app.use(myContext);
+
 // put currentUser in loopback.context on /api routes
 var getCurrentUserApi = require('./middleware/context-currentUserApi')();
 app.use(getCurrentUserApi);

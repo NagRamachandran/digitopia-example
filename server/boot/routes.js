@@ -6,7 +6,7 @@ module.exports = function (server) {
   var router = server.loopback.Router();
 
   router.get('/', getCurrentUser(), function (req, res, next) {
-    var ctx = server.loopback.getCurrentContext();
+    var ctx = req.myContext;
     var currentUser = ctx.get('currentUser');
     res.render('pages/home', {
       'user': currentUser,
@@ -33,7 +33,7 @@ module.exports = function (server) {
   });
 
   router.get('/upload', getCurrentUser(), ensureLoggedIn(), function (req, res, next) {
-    var ctx = server.loopback.getCurrentContext();
+    var ctx = req.myContext;
     var currentUser = ctx.get('currentUser');
 
     res.render('pages/upload', {
