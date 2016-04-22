@@ -28,6 +28,7 @@ i18n.configure({
   updateFiles: false
 });
 app.use(i18n.init);
+app.set('i18n', i18n);
 
 // setup component storage for s3
 var ds = loopback.createDataSource({
