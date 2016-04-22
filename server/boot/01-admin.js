@@ -4,5 +4,8 @@ var ensureAdminUser = require('../middleware/context-ensureAdminUser');
 
 module.exports = function (server) {
 	var userAuth = [getCurrentUser(), ensureAdminUser()];
-	adminBoot(server, userAuth, 'MyUsers', ['MyUser', 'TypeTestLookup']);
+	var options = {
+		'i18n': true
+	};
+	adminBoot(server, userAuth, 'MyUsers', ['MyUser', 'TypeTestLookup'], options);
 };

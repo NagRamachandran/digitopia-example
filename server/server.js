@@ -1,5 +1,7 @@
 var loopback = require('loopback');
 var boot = require('loopback-boot');
+var i18n = require('i18n');
+
 var app = module.exports = loopback();
 
 // use jade templating language
@@ -12,6 +14,20 @@ app.locals.env = app.get('env');
 app.locals.getUploadForProperty = require('./lib/getUploadForProperty');
 app.locals.moment = require('moment');
 app.locals._ = require('lodash');
+
+// localization config
+i18n.configure({
+  locales: ['en', 'es'],
+  cookie: 'locale',
+  defaultLocale: 'en',
+  directory: './locales',
+  fallbacks: {
+    'es': 'en'
+  },
+  autoReload: true,
+  updateFiles: false
+});
+app.use(i18n.init);
 
 // setup component storage for s3
 var ds = loopback.createDataSource({

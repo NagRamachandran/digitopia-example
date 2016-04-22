@@ -3,6 +3,7 @@ module.exports = {
     'sources': [
       'loopback/common/models',
       'loopback/server/models',
+      'digitopia-admin/common/models',
       '../common/models',
       './models'
     ],
@@ -46,6 +47,14 @@ module.exports = {
     'public': process.env.ADMIN ? true : false
   },
   'TypeTest': {
+    'dataSource': 'db',
+    'public': process.env.ADMIN ? true : false
+  },
+  'TypeTestLookup': {
+    'dataSource': 'db',
+    'public': process.env.ADMIN ? true : false
+  },
+  'I18n': {
     'dataSource': 'db',
     'public': process.env.ADMIN ? true : false
   }
