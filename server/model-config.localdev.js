@@ -24,11 +24,11 @@ module.exports = {
   },
   'AccessToken': {
     'dataSource': 'db',
-    'public': false
+    'public': process.env.ADMIN ? true : false
   },
   'ACL': {
     'dataSource': 'db',
-    'public': false
+    'public': process.env.ADMIN ? true : false
   },
   'RoleMapping': {
     'dataSource': 'db',
@@ -44,7 +44,7 @@ module.exports = {
   },
   'UserIdentity': {
     'dataSource': 'db',
-    'public': false
+    'public': process.env.ADMIN ? true : false
   },
   'ImageSet': {
     'dataSource': 'db',

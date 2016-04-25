@@ -193,9 +193,9 @@ module.exports = function enableAuthentication(server) {
 				};
 				identity.profile = profile;
 
-				server.models.UserIdentity.updateOrCreate(identity, function (err, identity) {
+				server.models.UserIdentity.upsert(identity, function (err, identity) {
 					if (err) {
-						var e = new VError(err, 'providerHandler: UserIdentity.updateOrCreate error');
+						var e = new VError(err, 'providerHandler: UserIdentity.upsert error');
 						return done(e);
 					}
 
