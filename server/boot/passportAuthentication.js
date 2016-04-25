@@ -77,6 +77,7 @@ module.exports = function enableAuthentication(server) {
 
 	server.use(router);
 
+	// ==========================================================
 	// utility fuctions to integrate passport with our user model
 	// ==========================================================
 
