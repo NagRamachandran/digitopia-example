@@ -5,35 +5,60 @@ block seo
 		Home
 
 block content
-	if alert
-		.alert.alert-info
-			= alert
-		
-	if user
-		p.
-			Logged in as #{user.email}
-		
-		p
-			a.btn.btn-primary(href="/upload") Upload a file
-			
-		p
-			button.btn.btn-default(data-jsclass="logoutController").
-					Log Out
-		
-	else
-		h3.
-			Login
+	.row
+		.col-xs-12
+
+			if alert
+				.alert.alert-info
+					= alert
 				
-		form.form.form-inline(data-jsclass="loginController")
-			.form-group
-				input.form-control(type="text" name="email" placeholder="Email address")
-			.form-group
-				input.form-control(type="password" name="password" placeholder="Password")
-			.form-group
-				input.form-control.btn.btn-primary(type="submit")
+			if user
+				p.
+					Logged in as #{user.email}
+					
+				- var fb,tw
 				
-		h3 - or -
-		
-		h3
-			a(href="/register").
-				Register
+				if user.identities()
+					for identity in user.identities()
+						if identity.provider === 'facebook'
+							- fb= identity
+						if identity.provider === 'twitter'
+							- tw= identity
+							
+				if fb
+					p Linked w/facebook account
+				else 
+					p
+						a(href="/auth/facebook" data-no-hijax="true") Link w/ Facebook Account
+					
+				if tw
+					p Linked w/twitter account
+				else 
+					p
+						a(href="/auth/twitter" data-no-hijax="true") Link w/ Twitter Account
+						
+				p
+					a.btn.btn-primary(href="/upload") Upload a file
+					
+				p
+					button.btn.btn-default(data-jsclass="logoutController").
+							Log Out
+							
+			else
+				h3 Login or 
+					a(href="/register") Create Account
+						
+				form.form.form-inline(data-jsclass="loginController")
+					.form-group
+						input.form-control(type="text" name="email" placeholder="Email address")
+					.form-group
+						input.form-control(type="password" name="password" placeholder="Password")
+					.form-group
+						input.form-control.btn.btn-primary(type="submit")
+
+				h3 Use Passport
+				.btn-group
+					a.btn.btn-primary(href= "/auth/facebook" data-no-hijax="true") Facebook
+					a.btn.btn-primary(href= "/auth/twitter" data-no-hijax="true") Twitter
+
+				h3 - or -

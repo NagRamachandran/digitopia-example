@@ -14,12 +14,6 @@ module.exports = function () {
 		this.cleanup = function () {
 			this.data = {};
 		};
-
-		this.dump = function () {
-			for (var k in this.data) {
-				console.log('context:' + k + '= %j', this.data[k]);
-			}
-		};
 	}
 
 	return function myContext(req, res, next) {

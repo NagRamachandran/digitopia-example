@@ -42,6 +42,10 @@ module.exports = {
     'dataSource': 'db',
     'public': true
   },
+  'UserIdentity': {
+    'dataSource': 'db',
+    'public': false
+  },
   'ImageSet': {
     'dataSource': 'db',
     'public': process.env.ADMIN ? true : false

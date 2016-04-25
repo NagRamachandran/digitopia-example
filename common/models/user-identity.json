@@ -1,0 +1,35 @@
+{
+	"name": "UserIdentity",
+	"plural": "UserIdentities",
+	"base": "PersistedModel",
+	"properties": {
+		"provider": {
+			"type": "String"
+		},
+		"externalId": {
+			"type": "String"
+		},
+		"profile": {
+			"type": "Object"
+		},
+		"credentials": {
+			"type": "Object"
+		}
+	},
+	"acls": [{
+		"principalType": "ROLE",
+		"principalId": "$everyone",
+		"permission": "DENY"
+	}, {
+		"principalType": "ROLE",
+		"principalId": "$owner",
+		"permission": "ALLOW"
+	}],
+	"relations": {
+		"user": {
+			"type": "belongsTo",
+			"model": "MyUser",
+			"foreignKey": "userId"
+		}
+	}
+}
