@@ -33,6 +33,10 @@ module.exports = function enableAuthentication(server) {
 		passReqToCallback: true
 	}, providerFacebook));
 
+	function providerFacebook(req, token, tokenSecret, profile, done) {
+		providerHandler('facebook', req, token, tokenSecret, profile, done);
+	}
+
 	// initiate facebook authentication
 	router.get('/auth/facebook', getCurrentUser, passport.authenticate('facebook', {
 		scope: ['public_profile', 'email', 'user_friends'],
@@ -40,18 +44,12 @@ module.exports = function enableAuthentication(server) {
 	}));
 
 	// facebook callback
+	// need access to the http context in order to handle login so wrap the passportResultHandler in closure
 	router.get('/auth/facebook/callback', getCurrentUser, function (req, res, next) {
-
-		// need access to the http context in order to handle login so wrap the callback in closure
 		passport.authenticate('facebook', function (err, user, info) {
 			passportResultHandler('facebook', err, user, info, req, res, next);
 		})(req, res, next);
-
 	});
-
-	function providerFacebook(req, token, tokenSecret, profile, done) {
-		providerHandler('facebook', req, token, tokenSecret, profile, done);
-	}
 
 	// setup twitter strategy
 	passport.use(new TwitterStrategy({
@@ -62,26 +60,24 @@ module.exports = function enableAuthentication(server) {
 		passReqToCallback: true
 	}, providerTwitter));
 
-	// initiate twitter authentication
-	router.get('/auth/twitter', loopbackSession, getCurrentUser, passport.authenticate('twitter', {}));
-
-	// twitter callback
-	router.get('/auth/twitter/callback', loopbackSession, getCurrentUser, function (req, res, next) {
-
-		// need access to the http context in order to handle login so wrap the callback in closure
-		passport.authenticate('twitter', function (err, user, info) {
-			passportResultHandler('twitter', err, user, info, req, res, next);
-		})(req, res, next);
-
-	});
-
 	function providerTwitter(req, token, tokenSecret, profile, done) {
 		providerHandler('twitter', req, token, tokenSecret, profile, done);
 	}
 
+	// initiate twitter authentication
+	router.get('/auth/twitter', loopbackSession, getCurrentUser, passport.authenticate('twitter', {}));
+
+	// twitter callback
+	// need access to the http context in order to handle login so wrap the passportResultHandler in closure
+	router.get('/auth/twitter/callback', loopbackSession, getCurrentUser, function (req, res, next) {
+		passport.authenticate('twitter', function (err, user, info) {
+			passportResultHandler('twitter', err, user, info, req, res, next);
+		})(req, res, next);
+	});
+
 	server.use(router);
 
-	// implement passport API
+	// utility fuctions to integrate passport with our user model
 
 	// back from passport
 	function passportResultHandler(provider, err, user, info, req, res, next) {
@@ -95,7 +91,7 @@ module.exports = function enableAuthentication(server) {
 				console.log('error', 'passportResultHandler %j', err, {});
 				return res.redirect('/?alert=' + err.message);
 			}
-			else { // something else went wrong
+			else { // something else went wrong in passport
 				var e = new WError(err, 'passportResultHandler error');
 				console.log(e.message);
 				console.log(e.stack);
@@ -107,11 +103,11 @@ module.exports = function enableAuthentication(server) {
 			return res.redirect('/?alert=' + provider + '-link-failed');
 		}
 
+		// already logged in
 		if (currentUser) {
 			res.redirect('/');
 		}
-		else {
-			// Log in the user
+		else { // log the user in
 			doLogin(user, function (err, accessToken) {
 				res.cookie('access_token', accessToken.id, {
 					signed: req.signedCookies ? true : false,
@@ -148,8 +144,7 @@ module.exports = function enableAuthentication(server) {
 		});
 	}
 
-
-
+	// set up users and identities
 	function providerHandler(provider, req, token, tokenSecret, profile, done) {
 		var ctx = req.getCurrentContext();
 		var currentUser = ctx.get('currentUser');
@@ -225,7 +220,8 @@ module.exports = function enableAuthentication(server) {
 					});
 				}
 				else {
-					// identity does not exist for profile id, create a user and identity and login
+
+					// identity does not exist for this profile id, create a user and identity and login
 					var user = {
 						username: 'passport-user-' + uuid.v4(),
 						email: 'passport-user-' + uuid.v4() + '-' + profile.id + '@digitopia.com',
