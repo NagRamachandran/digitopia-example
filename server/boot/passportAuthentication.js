@@ -78,6 +78,7 @@ module.exports = function enableAuthentication(server) {
 	server.use(router);
 
 	// utility fuctions to integrate passport with our user model
+	// ==========================================================
 
 	// back from passport
 	function passportResultHandler(provider, err, user, info, req, res, next) {
