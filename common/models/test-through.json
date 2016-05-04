@@ -1,0 +1,24 @@
+{
+	"name": "TestThrough",
+	"base": "PersistedModel",
+	"idInjection": true,
+	"options": {
+		"validateUpsert": true
+	},
+	"properties": {},
+	"validations": [],
+	"relations": {
+		"typeTest": {
+			"type": "belongsTo",
+			"model": "TypeTest",
+			"foreignKey": "typeTestId"
+		},
+		"typeTestLookup": {
+			"type": "belongsTo",
+			"model": "TypeTestLookup",
+			"foreignKey": "typeTestLookupId"
+		}
+	},
+	"acls": [],
+	"methods": {}
+}

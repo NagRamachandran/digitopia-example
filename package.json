@@ -14,7 +14,6 @@
     "cors": "^2.5.2",
     "digitopia": "git+https://github.com/mediapolis/digitopia.git",
     "digitopia-admin": "git+https://github.com/mediapolis/digitopia-admin.git",
-    "digitopia-admin-local": "file:../digitopia-admin",
     "docker-logger": "0.0.11",
     "express-session": "^1.13.0",
     "fs": "0.0.2",

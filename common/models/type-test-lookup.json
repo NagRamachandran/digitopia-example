@@ -20,7 +20,8 @@
     "typeTests": {
       "type": "hasMany",
       "model": "TypeTest",
-      "foreignKey": ""
+      "foreignKey": "typeTestId",
+      "through": "TestThrough"
     }
   },
   "acls": [],

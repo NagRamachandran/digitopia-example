@@ -123,10 +123,11 @@
       "model": "MyUser",
       "foreignKey": "ownerId"
     },
-    "typeTestLookup": {
-      "type": "belongsTo",
+    "typeTestLookups": {
+      "type": "hasMany",
       "model": "TypeTestLookup",
-      "foreignKey": ""
+      "foreignKey": "typeTestId",
+      "through": "TestThrough"
     }
   },
   "acls": [],

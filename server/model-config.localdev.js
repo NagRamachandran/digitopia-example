@@ -58,6 +58,10 @@ module.exports = {
     'dataSource': 'db',
     'public': process.env.ADMIN ? true : false
   },
+  'TestThrough': {
+    'dataSource': 'db',
+    'public': process.env.ADMIN ? true : false
+  },
   'I18n': {
     'dataSource': 'db',
     'public': process.env.ADMIN ? true : false
