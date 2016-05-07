@@ -50,6 +50,13 @@ module.exports = function (grunt) {
 		jsDistDir: 'client/dist/js/',
 		cssDistDir: 'client/dist/css/',
 		pkg: grunt.file.readJSON('package.json'),
+		mkdir: {
+			all: {
+				options: {
+					create: ['working', 'locales']
+				}
+			}
+		},
 		copy: {
 			main: {
 				files: copyCommand
@@ -111,6 +118,7 @@ module.exports = function (grunt) {
 		}
 	});
 
+	grunt.loadNpmTasks('grunt-mkdir');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-contrib-less');
 	grunt.loadNpmTasks('grunt-contrib-stylus');
@@ -120,6 +128,7 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 
 	grunt.registerTask('default', [
+		'mkdir',
 		'copy',
 		'less',
 		'stylus',
@@ -129,6 +138,7 @@ module.exports = function (grunt) {
 	]);
 
 	grunt.registerTask('devel', [
+		'mkdir',
 		'copy',
 		'less',
 		'stylus',

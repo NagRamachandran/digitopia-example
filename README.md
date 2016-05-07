@@ -14,8 +14,12 @@ To run the app:
 
 3. `cd digitopia-example`
 
+4. install [imagemagick](http://www.imagemagick.org/script/binary-releases.php) (if you want to play with file upload example)
+
 4. run `npm install`
 
 5. define localdev.env as described in see [keeping secrets](http://blog.digitopia.com/keeping-secrets/)
 
-6. run `./localdev.sh node .`
+6. run `grunt`
+
+7. run `./localdev.sh node .`
