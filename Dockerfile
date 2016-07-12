@@ -21,6 +21,7 @@ ADD docker-assets/webapp /var/app/current/docker-assets/webapp
 ADD server /var/app/current/server
 ADD tests /var/app/current/tests
 ADD working /var/app/current/working
+ADD locales /var/app/current/locales
 ADD gruntfile.js /var/app/current/gruntfile.js
 ADD package.json /var/app/current/package.json
 

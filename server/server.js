@@ -4,6 +4,8 @@ var i18n = require('i18n');
 
 var app = module.exports = loopback();
 
+app.enable('trust proxy');
+
 // use jade templating language
 app.set('views', 'server/views');
 app.set('view engine', 'jade');
@@ -70,7 +72,6 @@ if (app.get('env') === 'development') {
   var basicAuth = require('./middleware/basicAuth')();
   app.use(basicAuth);
 }
-
 
 app.start = function () {
   // start the web server

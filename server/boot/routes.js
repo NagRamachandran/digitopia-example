@@ -10,7 +10,8 @@ module.exports = function (server) {
     var currentUser = ctx.get('currentUser');
     res.render('pages/home', {
       'user': currentUser,
-      'alert': req.query.alert
+      'alert': req.query.alert,
+      'ip': req.ip
     });
   });
 

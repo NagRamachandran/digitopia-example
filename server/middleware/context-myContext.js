@@ -22,6 +22,7 @@ module.exports = function () {
 		});
 		req.myContext = new ReqContext();
 		req.myContext.set('originalUrl', req.originalUrl);
+		req.myContext.set('ip', req.ip);
 		req.getCurrentContext = function () {
 			return req.myContext;
 		};
