@@ -1,7 +1,9 @@
 version: '2'
 services:
   webapp:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-webapp
     ports:
       - "3000:3000"
     env_file:
