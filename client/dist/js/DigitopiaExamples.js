@@ -21482,6 +21482,38 @@ function GetJQueryPlugin(classname,obj) {
   ;
 
 })(window, document);
+;// parseUri 1.2.2
+// (c) Steven Levithan <stevenlevithan.com>
+// MIT License
+
+function parseUri(str) {
+	var o = parseUri.options,
+		m = o.parser[o.strictMode ? "strict" : "loose"].exec(str),
+		uri = {},
+		i = 14;
+
+	while (i--) uri[o.key[i]] = m[i] || "";
+
+	uri[o.q.name] = {};
+	uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2) {
+		if ($1) uri[o.q.name][$1] = $2;
+	});
+
+	return uri;
+};
+
+parseUri.options = {
+	strictMode: false,
+	key: ["source", "protocol", "authority", "userInfo", "user", "password", "host", "port", "relative", "path", "directory", "file", "query", "anchor"],
+	q: {
+		name: "queryKey",
+		parser: /(?:^|&)([^&=]*)=?([^&]*)/g
+	},
+	parser: {
+		strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
+		loose: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
+	}
+};
 ;(function ($) {
 	// disable dropzone auto instantiation
 	Dropzone.autoDiscover = false;
@@ -21592,6 +21624,11 @@ function didLogOut() {
 	$.removeCookie('access_token');
 }
 
+function didInjectContent(element) {
+	$('#document-body').trigger('DigitopiaInstantiate');
+	$('#document-body').data('digitopiaHijax').hijaxLinks(element);
+}
+
 (function ($) {
 	if (getAccessToken()) {
 		didLogIn();
@@ -21610,6 +21647,27 @@ function flashAjaxStatus(level, message) {
 	setTimeout(function () {
 		$('#ajax-status').empty();
 	}, 4000);
+}
+
+function getUploadForProperty(prop, uploads, type, fpo) {
+	if (uploads && uploads.length) {
+		for (var j = 0; j < uploads.length; j++) {
+			if (uploads[j].property === prop) {
+				if (type) {
+					if (uploads[j].imageSet[type]) {
+						return uploads[j].imageSet[type];
+					}
+				}
+				return uploads[j];
+			}
+		}
+	}
+	if (fpo) {
+		return {
+			url: '/images/fpo.jpg'
+		};
+	}
+	return null;
 }
 ;(function ($) {
 	function loginController(elem, options) {
@@ -21662,4 +21720,65 @@ function flashAjaxStatus(level, message) {
 		};
 	}
 	$.fn.logoutController = GetJQueryPlugin('logoutController', logoutController);
+})(jQuery);
+;(function ($) {
+	function OgTagPreview(elem, options) {
+		this.element = $(elem);
+		var self = this;
+
+		self.url = this.element.data('url');
+
+		this.start = function () {
+			this.element.on('data', function (e, data) {
+				self.data = data.result;
+				var src = getUploadForProperty('image', data.result.uploads, 'medium', true).url;
+				var img = $('<img data-jsclass="digitopiaLazyImg" data-lazy-src="' + src + '">');
+				var caption = $('<div class="caption">');
+				var site = data.result.ogData.ogSiteName ? data.result.ogData.ogSiteName : parseUri(self.url).host;
+
+				caption.append('<h3>' + data.result.ogData.ogTitle + '<i class="glyphicon glyphicon-chevron-right"></i></h3>');
+				caption.append('<h4>' + data.result.ogData.ogDescription + '</h4>');
+				caption.append('<small><em class="pull-right">' + site + '</em></small>');
+				caption.append('</div>');
+				self.element.append(img);
+				self.element.append(caption);
+				if (data.result.ogData.ogVideo) {
+					self.element.append('<div class="play"><i class="glyphicon glyphicon-play-circle"></i></div>');
+				}
+				self.element.digitopiaViewport({
+					'crop': true,
+					'blowup': true
+				});
+				didInjectContent(self.element);
+			});
+
+			self.element.digitopiaAjax({
+				args: {
+					url: self.url
+				}
+			});
+
+			self.element.on('click', function (e) {
+				if (self.data && self.data.ogData.ogVideo) {
+					self.element.empty().append('<iframe width="100%" height="100%" src="' + self.data.ogData.ogVideo.url + '?autoplay=1" frameborder="0" allowfullscreen></iframe>')
+				}
+				else {
+					var ref = window.open(self.url, '_blank');
+					ref.show();
+				}
+			});
+
+			self.element.hover(function () {
+				self.element.find('h4').fadeIn();
+			}, function () {
+				self.element.find('h4').fadeOut();
+			});
+		};
+
+		self.stop = function () {
+			this.element.off('data');
+			this.element.off('click');
+		};
+	}
+	$.fn.OgTagPreview = GetJQueryPlugin('OgTagPreview', OgTagPreview);
 })(jQuery);

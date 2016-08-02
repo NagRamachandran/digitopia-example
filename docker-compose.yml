@@ -1,6 +1,6 @@
 version: '2'
 services:
-  webapp:
+  "webapp-digitopia":
     build:
       context: .
       dockerfile: Dockerfile-webapp
@@ -11,7 +11,7 @@ services:
     networks:
       - frontend
 
-  nginx:
+  "nginx-digitopia":
     restart: always
     build:
       context: .

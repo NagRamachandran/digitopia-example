@@ -3748,6 +3748,61 @@ body {
   right: 0px;
   bottom: 0px;
 }
+.ogPreview {
+  height: 250px;
+  max-width: 350px;
+  cursor: pointer;
+  -webkit-border-radius: 6px;
+  border-radius: 6px;
+  border: 6px solid #95c200;
+  background-color: #666;
+  margin-bottom: 30px;
+}
+.ogPreview:hover {
+  border-color: #b3e801;
+}
+.ogPreview .play {
+  text-align: center;
+  color: #fff;
+  font-size: 60px;
+  width: 100%;
+  margin-top: 20px;
+  opacity: 0.4;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
+  filter: alpha(opacity=40);
+}
+.ogPreview .play:hover {
+  opacity: 0.8;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+  filter: alpha(opacity=80);
+}
+.ogPreview .caption {
+  color: #fff;
+  background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  background: -o-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  background: -ms-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  padding: 10px;
+  padding-top: 20px;
+  position: absolute;
+  bottom: 0px !important;
+  left: 0px !important;
+  top: auto !important;
+  width: 100%;
+  font-size: 12px;
+}
+.ogPreview .caption a {
+  color: #fff;
+}
+.ogPreview .caption h3 {
+  font-size: 16px;
+  margin: 0px;
+}
+.ogPreview .caption h4 {
+  font-size: 12px;
+  display: none;
+}
 
 /*!
  * Bootstrap v3.3.6 (http://getbootstrap.com)

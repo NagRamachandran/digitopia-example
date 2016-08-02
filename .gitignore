@@ -29,3 +29,5 @@ locales
 docker-ebs notes
 
 Dockerrun.aws.json
+
+dockercfg

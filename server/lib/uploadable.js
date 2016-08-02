@@ -57,10 +57,10 @@ module.exports = function () {
 			// process the upload
 			MyModel.findById(ctx.args.id, function (err, instance) {
 				if (err) {
-					return cb(new VError(err, 'error reading %s.%s', MyModelName, ctx.args.id));
+					return cb(new VError(err, 'error reading %s.%s', myModelName, ctx.args.id));
 				}
 				if (!instance) {
-					return cb(new VError(err, 'instance not found %s.%s', MyModelName, ctx.args.id));
+					return cb(new VError(err, 'instance not found %s.%s', myModelName, ctx.args.id));
 				}
 				uploadable(myModelName, instance, property, ctx, versionsByProperty, function (err, upload) {
 					return cb(err, upload);
@@ -183,6 +183,9 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 						cb('could not open url ' + response.statusCode);
 					}
 				});
+		}
+		else if (params.localCopy) {
+			cb(null, params.localCopy, meta);
 		}
 		else {
 

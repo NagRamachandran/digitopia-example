@@ -45,6 +45,11 @@ function didLogOut() {
 	$.removeCookie('access_token');
 }
 
+function didInjectContent(element) {
+	$('#document-body').trigger('DigitopiaInstantiate');
+	$('#document-body').data('digitopiaHijax').hijaxLinks(element);
+}
+
 (function ($) {
 	if (getAccessToken()) {
 		didLogIn();
@@ -63,4 +68,25 @@ function flashAjaxStatus(level, message) {
 	setTimeout(function () {
 		$('#ajax-status').empty();
 	}, 4000);
+}
+
+function getUploadForProperty(prop, uploads, type, fpo) {
+	if (uploads && uploads.length) {
+		for (var j = 0; j < uploads.length; j++) {
+			if (uploads[j].property === prop) {
+				if (type) {
+					if (uploads[j].imageSet[type]) {
+						return uploads[j].imageSet[type];
+					}
+				}
+				return uploads[j];
+			}
+		}
+	}
+	if (fpo) {
+		return {
+			url: '/images/fpo.jpg'
+		};
+	}
+	return null;
 }

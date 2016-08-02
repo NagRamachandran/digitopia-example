@@ -10,6 +10,7 @@ module.exports = {
     'mixins': [
       'loopback/common/mixins',
       'loopback/server/mixins',
+      '../node_modules/loopback-ds-timestamp-mixin',
       '../common/mixins',
       './mixins'
     ]
@@ -63,6 +64,10 @@ module.exports = {
     'public': process.env.ADMIN ? true : false
   },
   'I18n': {
+    'dataSource': 'db',
+    'public': process.env.ADMIN ? true : false
+  },
+  'OgTag': {
     'dataSource': 'db',
     'public': process.env.ADMIN ? true : false
   }

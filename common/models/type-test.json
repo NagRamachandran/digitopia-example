@@ -5,6 +5,12 @@
   "options": {
     "validateUpsert": true
   },
+  "admin": {
+    "defaultProperty": "aString",
+    "listProperties": [
+      "aString"
+    ]
+  },
   "properties": {
     "aString": {
       "type": "string",
@@ -131,11 +137,5 @@
     }
   },
   "acls": [],
-  "methods": {},
-  "admin": {
-    "defaultProperty": "aString",
-    "listProperties": [
-      "aString"
-    ]
-  }
+  "methods": {}
 }

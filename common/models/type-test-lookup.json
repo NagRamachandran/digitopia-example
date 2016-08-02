@@ -5,6 +5,9 @@
   "options": {
     "validateUpsert": true
   },
+  "admin": {
+    "defaultProperty": "description"
+  },
   "properties": {
     "description": {
       "type": "string",
@@ -25,8 +28,5 @@
     }
   },
   "acls": [],
-  "methods": {},
-  "admin": {
-    "defaultProperty": "description"
-  }
+  "methods": {}
 }
