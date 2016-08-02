@@ -60,12 +60,7 @@ block content
 				.btn-group
 					a.btn.btn-primary(href= "/auth/facebook" data-no-hijax="true") Facebook
 					a.btn.btn-primary(href= "/auth/twitter" data-no-hijax="true") Twitter
-
-	.row
+					
+	.row(style="padding-top:50px;")
 		.col-xs-12
-			h3 OG Tag Preview
-			.ogPreview.lazy-instantiate(data-lazy-jsclass="OgTagPreview" data-src="/api/OgTags/scrape" data-url="https://www.youtube.com/watch?v=G6Y5xLvYdMM" data-type="json")
-
-			.ogPreview.lazy-instantiate(data-lazy-jsclass="OgTagPreview" data-src="/api/OgTags/scrape" data-url="http://www.nytimes.com/interactive/2016/08/02/business/dealbook/this-is-your-life-private-equity.html?hp&action=click&pgtype=Homepage&clickSource=story-heading&module=photo-spot-region&region=top-news&WT.nav=top-news&_r=0" data-type="json")
-
-			.ogPreview.lazy-instantiate(data-lazy-jsclass="OgTagPreview" data-src="/api/OgTags/scrape" data-url="https://en.wikipedia.org/wiki/Sloth" data-type="json")
+			p= 'ip: ' + ip

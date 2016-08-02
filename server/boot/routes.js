@@ -15,6 +15,10 @@ module.exports = function (server) {
     });
   });
 
+  router.get('/ogtags', function (req, res, next) {
+    res.render('pages/og', {});
+  });
+
   router.get('/register', function (req, res, next) {
     res.render('pages/register');
   });

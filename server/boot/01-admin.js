@@ -13,5 +13,5 @@ module.exports = function (server) {
 		'i18n': true,
 		'dashboard': dashboard
 	};
-	adminBoot(server, userAuth, 'MyUsers', ['MyUser', 'TypeTestLookup'], options);
+	adminBoot(server, userAuth, 'MyUsers', ['MyUser', 'TypeTestLookup', 'OgTag'], options);
 };

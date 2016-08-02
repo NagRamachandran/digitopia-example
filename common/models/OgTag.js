@@ -71,7 +71,6 @@ module.exports = function (OgTag) {
 								var e = new VError('error getting head status code: %s %s', response.statusCode, url);
 								return cb(e);
 							}
-							console.log(response.headers['content-type']);
 							og.contentType = response.headers['content-type'];
 							cb(null, instance, og);
 						})
@@ -86,9 +85,12 @@ module.exports = function (OgTag) {
 						return cb(null, instance, og); // already have it
 					}
 
-					if (og.contentType.match(/^image\//)) {
+					var contentType = og.contentType;
+
+					if (contentType && contentType.match(/^image\//)) {
 						og = {
 							data: {
+								contentType: contentType,
 								ogImage: {
 									url: url
 								}
@@ -112,6 +114,7 @@ module.exports = function (OgTag) {
 							var e = new VError('error getting og tags %s', og.err);
 							return cb(e);
 						}
+						og.data.contentType = contentType;
 						cb(err, instance, og);
 					});
 				},
@@ -151,8 +154,6 @@ module.exports = function (OgTag) {
 					});
 				},
 				function upload(instance, og, screenshot, cb) { // upload resized screenshot or data.ogImage to s3
-
-					console.log(og, screenshot);
 
 					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || (!screenshot && !og.data.ogImage)) {
 						return cb(null, instance); // don't need to save image

@@ -12,10 +12,15 @@
 				var img = $('<img data-jsclass="digitopiaLazyImg" data-lazy-src="' + src + '">');
 				var caption = $('<div class="caption">');
 				var site = data.result.ogData.ogSiteName ? data.result.ogData.ogSiteName : parseUri(self.url).host;
-
-				caption.append('<h3>' + data.result.ogData.ogTitle + '<i class="glyphicon glyphicon-chevron-right"></i></h3>');
-				caption.append('<h4>' + data.result.ogData.ogDescription + '</h4>');
-				caption.append('<small><em class="pull-right">' + site + '</em></small>');
+				var title = data.result.ogData.ogTitle ? data.result.ogData.ogTitle : 'Link'
+				if (data.result.ogData.contentType && data.result.ogData.contentType.match(/^image\//i)) {
+					title = "Image";
+				}
+				caption.append('<h3>' + title + '<i class="glyphicon glyphicon-chevron-right"></i></h3>');
+				if (data.result.ogData.ogDescription) {
+					caption.append('<h4>' + data.result.ogData.ogDescription + '</h4>');
+				}
+				caption.append('<small><em>' + site + '</em></small>');
 				caption.append('</div>');
 				self.element.append(img);
 				self.element.append(caption);
@@ -41,14 +46,14 @@
 				}
 				else {
 					var ref = window.open(self.url, '_blank');
-					ref.show();
 				}
 			});
 
-			self.element.hover(function () {
-				self.element.find('h4').fadeIn();
-			}, function () {
-				self.element.find('h4').fadeOut();
+			self.element.on('mouseenter', function () {
+				self.element.addClass('hovering');
+			});
+			self.element.on('mouseleave', function () {
+				self.element.removeClass('hovering');
 			});
 		};
 
