@@ -10,7 +10,8 @@ var request = require('request');
 
 module.exports = function (OgTag) {
 
-	// add uploadable behavior
+	// add the uploadable behavior to the OgTag model
+	// so we can store cached and resized images for the UI
 	OgTag.on('attached', function () {
 		var versions = {
 			'image': [{
@@ -23,27 +24,25 @@ module.exports = function (OgTag) {
 				quality: 90,
 				maxHeight: 480,
 				maxWidth: 480
-			}, {
-				suffix: 'icon',
-				quality: 90,
-				maxWidth: 150,
-				maxHeight: 150,
-				aspect: '1:1'
 			}]
 		};
 		uploadable(OgTag, 'OgTag', versions);
 	});
 
-	// look in OgTag table for url.
-	// If not found scrape OG from url.
-	// If no image in OG tags, take a screenshot.
-	// Save OgTag if needed.
-	// Save resized image in s3 if needed.
+	// look in OgTag table for the url
+	// If found we are done
+	// If not found
+	//   Retrieve the the HEAD for the url to determine if it still exists and the content-type
+	//   Scrape OG tags from url
+	//   If no image found in scraped OG tags, take a screenshot
+	//   Save OgTag instance if needed
+	//   Save resized image in s3 if needed
 
 	OgTag.scrape = function (url, ctx, done) {
+		// we have several async tasks to perform so run it through waterfall
 		async.waterfall([
-				function (cb) {
-					// have we seen this page before?
+				// have we seen this page before?
+				function lookup(cb) {
 					OgTag.findOne({
 						'where': {
 							'url': url
@@ -56,15 +55,16 @@ module.exports = function (OgTag) {
 						cb(err, instance, instance ? instance.data : {});
 					});
 				},
+				// determine the content-type of the url if not cached
 				function getContentType(instance, og, cb) {
 					if (instance) {
 						return cb(null, instance, og); // already have it
 					}
-					var j = request.jar();
+					// need cookies for paywalled sites
 					request({
 							'method': 'HEAD',
 							'url': url,
-							'jar': j
+							'jar': request.jar()
 						})
 						.on('response', function (response) {
 							if (response.statusCode !== 200) {
@@ -79,7 +79,8 @@ module.exports = function (OgTag) {
 							return cb(e);
 						});
 				},
-				function getOgTags(instance, og, cb) { // get og tags from page
+				// scrape the og tags from the url if needed
+				function getOgTags(instance, og, cb) {
 
 					if (instance) {
 						return cb(null, instance, og); // already have it
@@ -87,6 +88,7 @@ module.exports = function (OgTag) {
 
 					var contentType = og.contentType;
 
+					// it it's an image theres no need to scrape the og tags (they don't exist)
 					if (contentType && contentType.match(/^image\//)) {
 						og = {
 							data: {
@@ -97,18 +99,20 @@ module.exports = function (OgTag) {
 							}
 						};
 
-						return cb(null, instance, og); // already have it
+						return cb(null, instance, og);
 					}
 
+					// set up the call to open-graph-scraper (using fork that allows setting "request" options explicitly)
+					// for paywalled sites like NYT we need to supply facebooks user agent string and support cookies
 					var options = {
 						'url': url,
 						'headers': {
 							'user-agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
 						},
 						'jar': request.jar()
-
 					};
 
+					// call open-graph-scraper
 					ogs(options, function (err, og) {
 						if (err) {
 							var e = new VError('error getting og tags %s', og.err);
@@ -118,7 +122,8 @@ module.exports = function (OgTag) {
 						cb(err, instance, og);
 					});
 				},
-				function save(instance, og, cb) { // save scraped og instance in cache
+				// save scraped og instance in cache if just scraped
+				function save(instance, og, cb) {
 
 					if (instance) {
 						return cb(null, instance, og); // already saved
@@ -134,7 +139,8 @@ module.exports = function (OgTag) {
 						cb(null, instance, og);
 					});
 				},
-				function screenshot(instance, og, cb) { // take a screenshot if no image in og tags
+				// fall back to a screenshot if no image in og tags
+				function screenshot(instance, og, cb) {
 
 					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || _.has(og, 'data.ogImage')) { // cached, don't need to do anything
 						return cb(null, instance, og, null); // don't need screenshot
@@ -153,12 +159,16 @@ module.exports = function (OgTag) {
 						});
 					});
 				},
-				function upload(instance, og, screenshot, cb) { // upload resized screenshot or data.ogImage to s3
+				// upload resized screenshot or data.ogImage to s3
+				function upload(instance, og, screenshot, cb) {
 
 					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || (!screenshot && !og.data.ogImage)) {
 						return cb(null, instance); // don't need to save image
 					}
 
+					// normally this is called via the api /api/modelname/id/upload
+					// but we can also call programatically by setting up the input in ctx
+					// if screenshot 'localCopy' will be set otherwise we use the url of the ogImage
 					ctx.args.id = instance.id;
 					ctx.req.query = {
 						'id': instance.id,
@@ -171,6 +181,7 @@ module.exports = function (OgTag) {
 							return cb(new VError(err, 'could not save image', err));
 						}
 
+						// include the upload instance on the ogTag instance
 						OgTag.include([instance], 'uploads', function (err, instances) {
 							if (err) {
 								return cb(new VError(err, 'could not include uploads', err));
@@ -180,6 +191,7 @@ module.exports = function (OgTag) {
 					});
 				}
 			],
+			// done processing
 			function (err, instance) {
 				if (err) {
 					var e = new WError(err, 'OgTag scrape failed');
@@ -190,9 +202,11 @@ module.exports = function (OgTag) {
 			});
 	};
 
+	// look in OgTag table for url.
 	OgTag.lookup = function (url, ctx, done) {
 		async.waterfall([
-				function (cb) { // have we seen this page before?
+				// have we seen this page before?
+				function lookup(cb) {
 
 					OgTag.findOne({
 						'where': {
@@ -207,6 +221,7 @@ module.exports = function (OgTag) {
 					});
 				}
 			],
+			// done processing
 			function (err, instance) {
 				if (err) {
 					var e = new WError(err, 'OgTag lookup failed');

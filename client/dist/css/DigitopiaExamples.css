@@ -3769,17 +3769,17 @@ body {
   color: #fff;
   font-size: 60px;
   width: 100%;
-  margin-top: 20px;
+  line-height: 350px;
   opacity: 0.2;
   -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=20)";
   filter: alpha(opacity=20);
 }
 .ogPreview .caption {
-  -webkit-transition: all 0.5s ease;
-  -moz-transition: all 0.5s ease;
-  -o-transition: all 0.5s ease;
-  -ms-transition: all 0.5s ease;
-  transition: all 0.5s ease;
+  -webkit-transition: all 0.25s ease;
+  -moz-transition: all 0.25s ease;
+  -o-transition: all 0.25s ease;
+  -ms-transition: all 0.25s ease;
+  transition: all 0.25s ease;
   -webkit-transform: translate3d(0, 0, 0);
   -moz-transform: translate3d(0, 0, 0);
   -o-transform: translate3d(0, 0, 0);
@@ -3796,7 +3796,7 @@ body {
   position: absolute;
   bottom: 0px;
   left: 0px;
-  top: 66%;
+  top: 80%;
   width: 100%;
   font-size: 12px;
 }
@@ -3807,6 +3807,10 @@ body {
   font-size: 16px;
   margin: 0px;
   padding-bottom: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
 }
 .ogPreview .caption h3 i {
   font-size: 12px;
@@ -3851,6 +3855,12 @@ body {
   background: -ms-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
   background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
   top: 0px;
+}
+.hovering .caption h3 {
+  overflow: auto;
+  white-space: normal;
+  -o-text-overflow: unset;
+  text-overflow: unset;
 }
 .hovering .caption h4 {
   height: auto;

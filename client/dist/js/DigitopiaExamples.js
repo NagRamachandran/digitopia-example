@@ -21729,6 +21729,7 @@ function getUploadForProperty(prop, uploads, type, fpo) {
 		self.url = this.element.data('url');
 
 		this.start = function () {
+			// once digitopiaAjax has loaded the data from the endpoint, build the ui
 			this.element.on('data', function (e, data) {
 				self.data = data.result;
 				var src = getUploadForProperty('image', data.result.uploads, 'medium', true).url;
@@ -21757,13 +21758,16 @@ function getUploadForProperty(prop, uploads, type, fpo) {
 				didInjectContent(self.element);
 			});
 
+			// set up arguments to ajax call to OgTag endpoint specified in element's data-src
 			self.element.digitopiaAjax({
 				args: {
 					url: self.url
 				}
 			});
 
+			// open url on click
 			self.element.on('click', function (e) {
+				// if video inject player
 				if (self.data && self.data.ogData.ogVideo) {
 					self.element.empty().append('<iframe width="100%" height="100%" src="' + self.data.ogData.ogVideo.url + '?autoplay=1" frameborder="0" allowfullscreen></iframe>')
 				}
@@ -21772,6 +21776,7 @@ function getUploadForProperty(prop, uploads, type, fpo) {
 				}
 			});
 
+			// do hover behavior by adding 'hovering' class to the element
 			self.element.on('mouseenter', function () {
 				self.element.addClass('hovering');
 			});
