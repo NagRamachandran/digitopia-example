@@ -19,6 +19,11 @@ html(lang="en")
 		block css
 			
 	body#document-body
+		script.
+			var result;
+			var cookie=(result=new RegExp('(?:^|; )responsive=([^;]*)').exec(document.cookie))?decodeURIComponent(result[1]):null;
+			if(cookie){document.body.className = cookie;}
+
 		.container-fluid
 			.row
 				.col-xs-12

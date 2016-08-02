@@ -3750,14 +3750,16 @@ body {
 }
 
 .ogPreview {
-  height: 250px;
-  max-width: 350px;
+  height: 350px;
   cursor: pointer;
   -webkit-border-radius: 6px;
   border-radius: 6px;
   border: 6px solid #95c200;
   background-color: #666;
   margin-bottom: 30px;
+}
+.not-digitopia-xsmall .ogPreview {
+  max-width: 450px;
 }
 .ogPreview:hover {
   border-color: #b3e801;
