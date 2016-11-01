@@ -2,8 +2,13 @@ var loopback = require('loopback');
 var server = require('../../server/server');
 var uploadable = require('../../server/lib/uploadable')();
 var async = require('async');
+var admin = require('digitopia-admin');
 
 module.exports = function (MyUser) {
+
+	if (process.env.ADMIN) {
+		admin.setUpRoleToggleAPI(MyUser);
+	}
 
 	// on login set access_token cookie with same ttl as loopback's accessToken
 	MyUser.afterRemote('login', function setLoginCookie(context, accessToken, next) {

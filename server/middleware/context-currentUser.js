@@ -20,11 +20,15 @@ module.exports = function () {
 				return next();
 			}
 
-			req.app.models.Role.getRoles({
-				principalType: req.app.models.RoleMapping.USER,
-				principalId: user.id
-			}, function (err, roles) {
+			var q = {
+				'where': {
+					'principalType': req.app.models.RoleMapping.USER,
+					'principalId': user.id
+				},
+				'include': ['role']
+			};
 
+			req.app.models.RoleMapping.find(q, function (err, roles) {
 				var reqContext = req.getCurrentContext();
 				reqContext.set('currentUser', user);
 				reqContext.set('ip', req.ip);

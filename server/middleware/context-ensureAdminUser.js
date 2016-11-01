@@ -6,11 +6,21 @@ module.exports = function () {
 		var reqContext = req.getCurrentContext();
 		var roles = reqContext.get('currentUserRoles');
 
-		if (!roles || roles.indexOf(1) === -1) {
-			res.redirect('/admin/need-login');
+
+		if (roles && roles.length) {
+			for (var i = 0; i < roles.length; i++) {
+				if (roles[i].role().name === 'superuser') {
+					reqContext.set('isSuperUser', 'true');
+				}
+			}
+
+			for (var i = 0; i < roles.length; i++) {
+				if (roles[i].role().name === 'admin') {
+					return next();
+				}
+			}
 		}
-		else {
-			next();
-		}
+
+		res.redirect('/admin/need-login');
 	};
 };

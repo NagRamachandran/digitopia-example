@@ -1,4 +1,4 @@
-var adminBoot = require('digitopia-admin');
+var admin = require('digitopia-admin');
 var getCurrentUser = require('../middleware/context-currentUser');
 var ensureAdminUser = require('../middleware/context-ensureAdminUser');
 
@@ -13,5 +13,5 @@ module.exports = function (server) {
 		'i18n': true,
 		'dashboard': dashboard
 	};
-	adminBoot(server, userAuth, 'MyUsers', ['MyUser', 'TypeTestLookup', 'OgTag'], options);
+	admin.adminBoot(server, userAuth, 'MyUser', ['MyUser', 'TypeTestLookup', 'OgTag'], options);
 };

@@ -60,11 +60,24 @@ module.exports = function createDefaultData(server, done) {
 							callback();
 						});
 					});
+				},
+				function (callback) {
+					server.models.Role.create({
+						name: 'superuser'
+					}, function (err, role) {
+						if (err) return callback(err);
+						role.principals.create({
+							principalType: server.models.RoleMapping.USER,
+							principalId: theUser.id
+						}, function (err, principal) {
+							callback();
+						});
+					});
 				}
 			], function (err) {
 				cb();
 			});
 
-		})
+		});
 	}
 };
