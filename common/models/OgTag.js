@@ -17,13 +17,18 @@ module.exports = function (OgTag) {
 			'image': [{
 				suffix: 'large',
 				quality: 90,
-				maxHeight: 1024,
-				maxWidth: 1024,
+				maxHeight: 960,
+				maxWidth: 960,
 			}, {
 				suffix: 'medium',
 				quality: 90,
 				maxHeight: 480,
 				maxWidth: 480
+			}, {
+				suffix: 'small',
+				quality: 90,
+				maxHeight: 150,
+				maxWidth: 150
 			}]
 		};
 		uploadable(OgTag, 'OgTag', versions);
@@ -52,7 +57,9 @@ module.exports = function (OgTag) {
 						if (err) {
 							return cb(new VError(err, 'error reading %s.%s', MyModelName, url));
 						}
-						cb(err, instance, instance ? instance.data : {});
+						cb(err, instance, instance ? instance.ogData : {
+							data: {}
+						});
 					});
 				},
 				// determine the content-type of the url if not cached
@@ -67,14 +74,13 @@ module.exports = function (OgTag) {
 							'jar': request.jar()
 						})
 						.on('response', function (response) {
-							if (response.statusCode !== 200) {
-								var e = new VError('error getting head status code: %s %s', response.statusCode, url);
-								return cb(e);
-							}
-							og.contentType = response.headers['content-type'];
+							og.success = response.statusCode === 200 ? true : false;
+							og.httpStatusCode = response.statusCode;
+							og.data.contentType = response.headers['content-type'];
 							cb(null, instance, og);
 						})
 						.on('error', function (err) {
+							console.log(err);
 							var e = new VError(err, 'error getting head');
 							return cb(e);
 						});
@@ -86,16 +92,18 @@ module.exports = function (OgTag) {
 						return cb(null, instance, og); // already have it
 					}
 
-					var contentType = og.contentType;
+					if (og && !og.success) {
+						return cb(null, instance, og); // link is probably bad
+					}
 
-					// it it's an image theres no need to scrape the og tags (they don't exist)
+					var contentType = og.data.contentType;
+
+					// if it's an image theres no need to scrape the og tags (they don't exist)
 					if (contentType && contentType.match(/^image\//)) {
-						og = {
-							data: {
-								contentType: contentType,
-								ogImage: {
-									url: url
-								}
+						og.data = {
+							contentType: contentType,
+							ogImage: {
+								url: url
 							}
 						};
 
@@ -109,7 +117,8 @@ module.exports = function (OgTag) {
 						'headers': {
 							'user-agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
 						},
-						'jar': request.jar()
+						'jar': request.jar(),
+						'onlyGetOpenGraphInfo': true
 					};
 
 					// call open-graph-scraper
@@ -131,7 +140,7 @@ module.exports = function (OgTag) {
 
 					OgTag.create({
 						url: url,
-						ogData: og.data
+						ogData: og
 					}, function (err, instance) {
 						if (err) {
 							return cb(new VError(err, 'could not save OgTag instance %j %j', url, og));
@@ -144,6 +153,10 @@ module.exports = function (OgTag) {
 
 					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || _.has(og, 'data.ogImage')) { // cached, don't need to do anything
 						return cb(null, instance, og, null); // don't need screenshot
+					}
+
+					if (og && !og.success) {
+						return cb(null, instance, og, null); // link is probably bad
 					}
 
 					tmp.tmpName(function (err, name) {
@@ -162,8 +175,18 @@ module.exports = function (OgTag) {
 				// upload resized screenshot or data.ogImage to s3
 				function upload(instance, og, screenshot, cb) {
 
+					if (og && !og.success) {
+						return cb(null, instance); // link is probably bad
+					}
+
 					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || (!screenshot && !og.data.ogImage)) {
 						return cb(null, instance); // don't need to save image
+					}
+
+					if (_.has(og, 'data.ogImage.url')) {
+						if (og.data.ogImage.url.match(/^\/\//)) {
+							return cb(null, instance);
+						}
 					}
 
 					// normally this is called via the api /api/modelname/id/upload
@@ -173,7 +196,7 @@ module.exports = function (OgTag) {
 					ctx.req.query = {
 						'id': instance.id,
 						'localCopy': screenshot,
-						'url': og.data.ogImage ? og.data.ogImage.url : null
+						'url': _.has(og, 'data.ogImage.url') ? og.data.ogImage.url : null
 					};
 
 					OgTag.upload(instance.id, 'image', ctx, function (err, upload) {
