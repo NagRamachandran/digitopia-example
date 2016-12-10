@@ -45,9 +45,6 @@ app.model(container, {
   'public': false
 });
 
-// use loopback.context on all routes
-app.use(loopback.context());
-
 // use loopback.token middleware on all routes
 // setup gear for authentication using cookie (access_token)
 // Note: requires cookie-parser (defined in middleware.json)
@@ -63,7 +60,7 @@ app.use(loopback.token({
 var myContext = require('./middleware/context-myContext')();
 app.use(myContext);
 
-// put currentUser in loopback.context on /api routes
+// put currentUser in req.context on /api routes
 var getCurrentUserApi = require('./middleware/context-currentUserApi')();
 app.use(getCurrentUserApi);
 
