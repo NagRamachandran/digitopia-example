@@ -9,7 +9,7 @@
 			// once digitopiaAjax has loaded the data from the endpoint, build the ui
 			this.element.on('data', function (e, data) {
 				self.data = data.result;
-				var src = getUploadForProperty('image', data.result.uploads, 'medium', true).url;
+				var src = getUploadForProperty('image', data.result.uploads, 'large', true).url;
 				var img = $('<img data-jsclass="digitopiaLazyImg" data-lazy-src="' + src + '">');
 				var caption = $('<div class="caption">');
 				var site = data.result.ogData.data.ogSiteName ? data.result.ogData.data.ogSiteName : parseUri(self.url).host;

@@ -3698,177 +3698,6 @@ Copyright (c) 2015 Daniel Eden
         border-right: 6px solid transparent;
         border-bottom: 6px solid #be2626; }
 
-body {
-  background-color: #eee;
-}
-.is-logged-in .hidden-logged-in {
-  display: none !important;
-}
-.is-logged-out .hidden-logged-out {
-  display: none !important;
-}
-#scope-pages-upload .profile-photo-viewport {
-  position: relative;
-  height: 300px;
-}
-#scope-pages-upload .profile-photo-viewport img {
-  -webkit-transition: all 0.5s ease;
-  -moz-transition: all 0.5s ease;
-  -o-transition: all 0.5s ease;
-  -ms-transition: all 0.5s ease;
-  transition: all 0.5s ease;
-}
-#scope-pages-upload .profile-photo-viewport .dropzone {
-  position: absolute;
-  top: 0px !important;
-  width: 100%;
-  height: 300px;
-  opacity: 0;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
-  filter: alpha(opacity=0);
-  -webkit-transition: all 0.5s ease;
-  -moz-transition: all 0.5s ease;
-  -o-transition: all 0.5s ease;
-  -ms-transition: all 0.5s ease;
-  transition: all 0.5s ease;
-  paddding-top: 40%;
-}
-#scope-pages-upload .profile-photo-viewport .dropzone:hover {
-  opacity: 0.8;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
-  filter: alpha(opacity=80);
-}
-#scope-pages-upload .profile-photo-viewport .loading {
-  opacity: 1;
-  -ms-filter: none;
-  filter: none;
-}
-#ajax-status {
-  position: fixed;
-  right: 0px;
-  bottom: 0px;
-}
-
-.ogPreview {
-  height: 350px;
-  cursor: pointer;
-  -webkit-border-radius: 6px;
-  border-radius: 6px;
-  border: 6px solid #95c200;
-  background-color: #666;
-  margin-bottom: 30px;
-}
-.not-digitopia-xsmall .ogPreview {
-  max-width: 450px;
-}
-.ogPreview:hover {
-  border-color: #b3e801;
-}
-.ogPreview .play {
-  text-align: center;
-  color: #fff;
-  font-size: 60px;
-  width: 100%;
-  line-height: 350px;
-  opacity: 0.2;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=20)";
-  filter: alpha(opacity=20);
-}
-.ogPreview .caption {
-  -webkit-transition: all 0.25s ease;
-  -moz-transition: all 0.25s ease;
-  -o-transition: all 0.25s ease;
-  -ms-transition: all 0.25s ease;
-  transition: all 0.25s ease;
-  -webkit-transform: translate3d(0, 0, 0);
-  -moz-transform: translate3d(0, 0, 0);
-  -o-transform: translate3d(0, 0, 0);
-  -ms-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
-  color: #fff;
-  background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
-  background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
-  background: -o-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
-  background: -ms-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
-  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
-  padding: 10px;
-  padding-top: 20px;
-  position: absolute;
-  bottom: 0px;
-  left: 0px;
-  top: 80%;
-  width: 100%;
-  font-size: 12px;
-}
-.ogPreview .caption a {
-  color: #fff;
-}
-.ogPreview .caption h3 {
-  font-size: 16px;
-  margin: 0px;
-  padding-bottom: 20px;
-  white-space: nowrap;
-  overflow: hidden;
-  -o-text-overflow: ellipsis;
-  text-overflow: ellipsis;
-}
-.ogPreview .caption h3 i {
-  font-size: 12px;
-  opacity: 0.4;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
-  filter: alpha(opacity=40);
-}
-.ogPreview .caption h4 {
-  -webkit-transition: all 0.25s ease;
-  -moz-transition: all 0.25s ease;
-  -o-transition: all 0.25s ease;
-  -ms-transition: all 0.25s ease;
-  transition: all 0.25s ease;
-  -webkit-transition-delay: 0.25s;
-  -moz-transition-delay: 0.25s;
-  -o-transition-delay: 0.25s;
-  -ms-transition-delay: 0.25s;
-  transition-delay: 0.25s;
-  -webkit-transform: translate3d(0, 0, 0);
-  -moz-transform: translate3d(0, 0, 0);
-  -o-transform: translate3d(0, 0, 0);
-  -ms-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
-  font-size: 12px;
-  height: 0px;
-  opacity: 0;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
-  filter: alpha(opacity=0);
-}
-.ogPreview .caption small {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  opacity: 0.6;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=60)";
-  filter: alpha(opacity=60);
-}
-.hovering .caption {
-  background: -webkit-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
-  background: -moz-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
-  background: -o-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
-  background: -ms-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
-  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
-  top: 0px;
-}
-.hovering .caption h3 {
-  overflow: auto;
-  white-space: normal;
-  -o-text-overflow: unset;
-  text-overflow: unset;
-}
-.hovering .caption h4 {
-  height: auto;
-  opacity: 1;
-  -ms-filter: none;
-  filter: none;
-}
-
 /*!
  * Bootstrap v3.3.7 (http://getbootstrap.com)
  * Copyright 2011-2016 Twitter, Inc.
@@ -10591,4 +10420,175 @@ button.close {
   .hidden-print {
     display: none !important;
   }
+}
+
+body {
+  background-color: #eee;
+}
+.is-logged-in .hidden-logged-in {
+  display: none !important;
+}
+.is-logged-out .hidden-logged-out {
+  display: none !important;
+}
+#scope-pages-upload .profile-photo-viewport {
+  position: relative;
+  height: 300px;
+}
+#scope-pages-upload .profile-photo-viewport img {
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+}
+#scope-pages-upload .profile-photo-viewport .dropzone {
+  position: absolute;
+  top: 0px !important;
+  width: 100%;
+  height: 300px;
+  opacity: 0;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+  filter: alpha(opacity=0);
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+  paddding-top: 40%;
+}
+#scope-pages-upload .profile-photo-viewport .dropzone:hover {
+  opacity: 0.8;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+  filter: alpha(opacity=80);
+}
+#scope-pages-upload .profile-photo-viewport .loading {
+  opacity: 1;
+  -ms-filter: none;
+  filter: none;
+}
+#ajax-status {
+  position: fixed;
+  right: 0px;
+  bottom: 0px;
+}
+
+.ogPreview {
+  height: 350px;
+  cursor: pointer;
+  -webkit-border-radius: 6px;
+  border-radius: 6px;
+  border: 6px solid #95c200;
+  background-color: #666;
+  margin-bottom: 30px;
+}
+.not-digitopia-xsmall .ogPreview {
+  max-width: 450px;
+}
+.ogPreview:hover {
+  border-color: #b3e801;
+}
+.ogPreview .play {
+  text-align: center;
+  color: #fff;
+  font-size: 60px;
+  width: 100%;
+  line-height: 350px;
+  opacity: 0.2;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=20)";
+  filter: alpha(opacity=20);
+}
+.ogPreview .caption {
+  -webkit-transition: all 0.25s ease;
+  -moz-transition: all 0.25s ease;
+  -o-transition: all 0.25s ease;
+  -ms-transition: all 0.25s ease;
+  transition: all 0.25s ease;
+  -webkit-transform: translate3d(0, 0, 0);
+  -moz-transform: translate3d(0, 0, 0);
+  -o-transform: translate3d(0, 0, 0);
+  -ms-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  color: #fff;
+  background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  background: -o-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  background: -ms-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);
+  padding: 10px;
+  padding-top: 20px;
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  top: 80%;
+  width: 100%;
+  font-size: 12px;
+}
+.ogPreview .caption a {
+  color: #fff;
+}
+.ogPreview .caption h3 {
+  font-size: 16px;
+  margin: 0px;
+  padding-bottom: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+}
+.ogPreview .caption h3 i {
+  font-size: 12px;
+  opacity: 0.4;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
+  filter: alpha(opacity=40);
+}
+.ogPreview .caption h4 {
+  -webkit-transition: all 0.25s ease;
+  -moz-transition: all 0.25s ease;
+  -o-transition: all 0.25s ease;
+  -ms-transition: all 0.25s ease;
+  transition: all 0.25s ease;
+  -webkit-transition-delay: 0.25s;
+  -moz-transition-delay: 0.25s;
+  -o-transition-delay: 0.25s;
+  -ms-transition-delay: 0.25s;
+  transition-delay: 0.25s;
+  -webkit-transform: translate3d(0, 0, 0);
+  -moz-transform: translate3d(0, 0, 0);
+  -o-transform: translate3d(0, 0, 0);
+  -ms-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  font-size: 12px;
+  height: 0px;
+  opacity: 0;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+  filter: alpha(opacity=0);
+}
+.ogPreview .caption small {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  opacity: 0.6;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=60)";
+  filter: alpha(opacity=60);
+}
+.hovering .caption {
+  background: -webkit-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+  background: -moz-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+  background: -o-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+  background: -ms-linear-gradient(top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+  top: 0px;
+}
+.hovering .caption h3 {
+  overflow: auto;
+  white-space: normal;
+  -o-text-overflow: unset;
+  text-overflow: unset;
+}
+.hovering .caption h4 {
+  height: auto;
+  opacity: 1;
+  -ms-filter: none;
+  filter: none;
 }

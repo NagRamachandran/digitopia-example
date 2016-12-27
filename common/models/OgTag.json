@@ -44,7 +44,7 @@
       "type": "upload",
       "name": "Image",
       "property": "image",
-      "endpoint": "/api/OgTag/:id/upload/image"
+      "endpoint": "/api/OgTags/:id/upload/image"
     }]
   }
 }
