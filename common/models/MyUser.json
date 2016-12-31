@@ -25,12 +25,12 @@
       "type": "upload",
       "name": "Upload Photo",
       "property": "photo",
-      "endpoint": "/api/MyUsers/me/upload/photo"
+      "endpoint": "/api/MyUsers/:id/upload/photo"
     }, {
       "type": "upload",
       "name": "Upload Background",
       "property": "background",
-      "endpoint": "/api/MyUsers/me/upload/background"
+      "endpoint": "/api/MyUsers/:id/upload/background"
     }]
   },
   "properties": {},
