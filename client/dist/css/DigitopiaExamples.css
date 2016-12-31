@@ -10477,7 +10477,6 @@ body {
 .ogPreview {
   height: 350px;
   cursor: pointer;
-  -webkit-border-radius: 6px;
   border-radius: 6px;
   border: 6px solid #95c200;
   background-color: #666;
