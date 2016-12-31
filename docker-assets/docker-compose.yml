@@ -2,20 +2,20 @@ version: '2'
 services:
   "webapp-digitopia":
     build:
-      context: .
-      dockerfile: Dockerfile-webapp
+      context: ../
+      dockerfile: docker-assets/Dockerfile-webapp
     ports:
       - "3000:3000"
     env_file:
-      - ./localdev.env
+      - ../localdev.env
     networks:
       - frontend
 
   "nginx-digitopia":
     restart: always
     build:
-      context: .
-      dockerfile: Dockerfile-nginx
+      context: ../
+      dockerfile: docker-assets/Dockerfile-nginx
     ports:
       - "8080:8080"
     networks:
