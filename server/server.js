@@ -8,7 +8,7 @@ app.enable('trust proxy');
 
 // use jade templating language
 app.set('views', 'server/views');
-app.set('view engine', 'jade');
+app.set('view engine', 'pug');
 app.locals.pretty = true;
 
 // expose the running environment name to jade

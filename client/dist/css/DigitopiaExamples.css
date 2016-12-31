@@ -1,18 +1,21 @@
 *, *:before, *:after {
   -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
 }
- 
+
 .responsive-loading {
 	background:url(/digitopia/images/loading.gif);
 	background-repeat:no-repeat;
 	background-position:center;
+  min-width:16px;
+  min-height:11px;
 }
+
 
 #parallax-wrapper {
 	position:relative;
 }
-	
-.parallax-act {	
+
+.parallax-act {
 	z-index:10;
 	position:fixed;
 }
@@ -32,8 +35,6 @@
 	position:fixed;
 	-webkit-transform: translateZ(0);
 }
-
-
 
 @charset "UTF-8";
 
@@ -10476,7 +10477,6 @@ body {
 .ogPreview {
   height: 350px;
   cursor: pointer;
-  -webkit-border-radius: 6px;
   border-radius: 6px;
   border: 6px solid #95c200;
   background-color: #666;
