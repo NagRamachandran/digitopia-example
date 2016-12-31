@@ -22,7 +22,7 @@ describe('upload', function () {
 				assert.equal(res.status, 200);
 				expect(res.body).to.be.an('object');
 				expect(res.body.result).to.be.an('object');
-				expect(res.body.result.data.success).to.equal(true);
+				expect(res.body.result.ogData.success).to.equal(true);
 				done();
 			});
 

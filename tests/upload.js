@@ -54,7 +54,7 @@ describe('upload', function () {
 		persist
 			.post(url).attach('uploadedFile', file)
 			.end(function (err, res) {
-				expect(res.status).to.be(401);
+				expect(res.status).to.be(400);
 				done();
 			});
 	});
@@ -118,15 +118,12 @@ describe('upload', function () {
 			});
 	});
 
-	it('user 1 should be able to copy cropped image url to self', function (done) {
-		var url = 'http://localhost:3000/api/MyUsers/me/upload/photo-cropped';
+	it('user 1 should be able to copy image url to self', function (done) {
+		var url = 'http://localhost:3000/api/MyUsers/me/upload/background';
 		persist
 			.post(url)
 			.send({
-				url: testUrlCopy,
-				model: 'user',
-				id: token.userId,
-				property: 'photo-cropped'
+				url: testUrlCopy
 			})
 			.end(function (err, res) {
 				expect(err).to.be(null);

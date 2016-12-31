@@ -23,3 +23,7 @@ To run the app:
 6. run `grunt`
 
 7. run `./localdev.sh node .`
+
+#### to run in docker
+
+1. cd docker-assets; docker-compose up

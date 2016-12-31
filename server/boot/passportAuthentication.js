@@ -2,7 +2,7 @@ var loopback = require('loopback');
 var passport = require('passport');
 var FacebookStrategy = require('passport-facebook').Strategy;
 var TwitterStrategy = require('passport-twitter').Strategy;
-
+var sessions = require('express-session');
 var getCurrentUser = require('../middleware/context-currentUser')();
 var uuid = require('uuid');
 var VError = require('verror').VError;
@@ -18,7 +18,7 @@ module.exports = function enableAuthentication(server) {
 	var router = server.loopback.Router();
 
 	// twitter strategy needs this
-	var loopbackSession = loopback.session({
+	var loopbackSession = sessions({
 		secret: 'DekodrRing',
 		resave: false,
 		saveUninitialized: false
