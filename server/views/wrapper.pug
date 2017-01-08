@@ -8,16 +8,16 @@ html(lang="en")
 		meta(name="apple-mobile-web-app-capable" content="yes")
 		meta(name="apple-mobile-web-app-status-bar-style" content="black-translucent")
 		meta(name="mobile-web-app-capable" content="yes")
-		
+
 		block seo
 
 		if env === 'production'
 			link(rel='stylesheet' href="/dist/css/DigitopiaExamples.min.css")
-		else 
+		else
 			link(rel='stylesheet' href="/dist/css/DigitopiaExamples.css")
 
 		block css
-			
+
 	body#document-body
 		script.
 			var result;
@@ -32,6 +32,9 @@ html(lang="en")
 
 			#content(data-hijax="true")
 				block content
+
+				p.
+					hi! v1
 
 		#ajax-status
 
