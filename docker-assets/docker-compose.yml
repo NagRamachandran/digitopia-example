@@ -1,6 +1,7 @@
 version: '2'
 services:
   "webapp-digitopia":
+    container_name: webapp-digitopia
     build:
       context: ../
       dockerfile: docker-assets/Dockerfile-webapp
@@ -12,6 +13,7 @@ services:
       - frontend
 
   "nginx-digitopia":
+    container_name: nginx-digitopia
     restart: always
     build:
       context: ../
