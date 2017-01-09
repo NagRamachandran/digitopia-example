@@ -1,0 +1,28 @@
+{
+	"AWSEBDockerrunVersion": 2,
+	"containerDefinitions": [{
+		"name": "webapp-digitopia",
+		"image": "<your ECS repository>:webapp",
+		"environment": [],
+		"essential": true,
+		"memory": 512,
+		"portMappings": [{
+			"hostPort": 3000,
+			"containerPort": 3000
+		}],
+		"mountPoints": []
+	}, {
+		"name": "nginx-digitopia",
+		"image": "<your ECS repository>:nginx",
+		"essential": true,
+		"memory": 128,
+		"portMappings": [{
+			"hostPort": 80,
+			"containerPort": 8080
+		}],
+		"links": [
+			"webapp-digitopia"
+		],
+		"mountPoints": []
+	}]
+}
