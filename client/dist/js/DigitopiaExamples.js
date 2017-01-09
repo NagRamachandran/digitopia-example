@@ -22283,6 +22283,7 @@ parseUri.options = {
 						img.attr('src', s3file);
 						img.data('lazy-src', s3file);
 						self.element.removeClass('loading');
+						$('body').trigger('DigitopiaReloadPage');
 					});
 
 					// remove the thumbnail from the dropzone UI
