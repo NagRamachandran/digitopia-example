@@ -19,7 +19,6 @@ node_modules
 npm-debug.log
 working
 localdev.env
-locales
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
