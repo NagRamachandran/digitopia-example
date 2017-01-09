@@ -13,6 +13,10 @@ var TWO_WEEKS = 60 * 60 * 24 * 7 * 2;
 
 module.exports = function enableAuthentication(server) {
 
+	if (process.env.SKIP_PASSPORT) {
+		return;
+	}
+
 	var UserModel = server.models.MyUser;
 
 	var router = server.loopback.Router();

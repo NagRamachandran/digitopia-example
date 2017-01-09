@@ -16,6 +16,9 @@ app.locals.env = app.get('env');
 app.locals.getUploadForProperty = require('./lib/getUploadForProperty');
 app.locals.moment = require('moment');
 app.locals._ = require('lodash');
+app.locals.SKIP_PASSPORT = process.env.SKIP_PASSPORT;
+app.locals.SKIP_UPLOAD = process.env.SKIP_UPLOAD;
+app.locals.SKIP_OG = process.env.SKIP_OG;
 
 // localization config
 i18n.configure({
@@ -46,6 +49,7 @@ app.model(container, {
   'dataSource': ds,
   'public': true
 });
+
 
 // use loopback.token middleware on all routes
 // setup gear for authentication using cookie (access_token)
