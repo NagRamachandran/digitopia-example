@@ -1,12 +1,8 @@
 {
 	"AWSEBDockerrunVersion": 2,
-	"authentication": {
-		"bucket": "digitopia-ebs-docker",
-		"key": "dockercfg.json"
-	},
 	"containerDefinitions": [{
 		"name": "webapp-digitopia",
-		"image": "980978009426.dkr.ecr.us-east-1.amazonaws.com/mrhodes:webapp-digitopia",
+		"image": "980978009426.dkr.ecr.us-east-1.amazonaws.com/digitopia-example:webapp",
 		"environment": [],
 		"essential": true,
 		"memory": 512,
@@ -17,7 +13,7 @@
 		"mountPoints": []
 	}, {
 		"name": "nginx-digitopia",
-		"image": "980978009426.dkr.ecr.us-east-1.amazonaws.com/mrhodes:nginx-digitopia",
+		"image": "980978009426.dkr.ecr.us-east-1.amazonaws.com/digitopia-example:nginx",
 		"essential": true,
 		"memory": 128,
 		"portMappings": [{
