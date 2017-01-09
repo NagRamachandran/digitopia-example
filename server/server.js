@@ -39,10 +39,12 @@ var ds = loopback.createDataSource({
   key: process.env.AWS_S3_KEY,
   keyId: process.env.AWS_S3_KEY_ID,
 });
-var container = ds.createModel('container');
+var container = ds.createModel('container', {}, {
+  base: 'Model'
+});
 app.model(container, {
-  'dataSource': null,
-  'public': false
+  'dataSource': ds,
+  'public': true
 });
 
 // use loopback.token middleware on all routes

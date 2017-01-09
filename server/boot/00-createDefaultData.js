@@ -1,25 +1,25 @@
 var async = require('async');
 
 module.exports = function createDefaultData(server, done) {
-	if (!process.env.AUTOMIGRATE) {
+	if (!process.env.AUTOUPDATE) {
 		return done();
 	}
 
 	var ds = server.dataSources.db;
 	if (ds.connected) {
-		doAutoMigrate(done);
+		doAutoUpdate(done);
 	}
 	else {
 		ds.once('connected', function () {
-			doAutoMigrate(done);
+			doAutoUpdate(done);
 		});
 	}
 
-	function doAutoMigrate(done) {
+	function doAutoUpdate(done) {
 
-		server.dataSources.db.automigrate(function (err) {
+		server.dataSources.db.autoupdate(function (err) {
 			if (err) {
-				console.log('** automigrate error', err);
+				console.log('** autoupdate error', err);
 			}
 
 			async.parallel({
@@ -92,7 +92,6 @@ module.exports = function createDefaultData(server, done) {
 				], function (err) {
 					cb();
 				});
-
 			});
 		}
 	}

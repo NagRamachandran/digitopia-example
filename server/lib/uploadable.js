@@ -12,7 +12,6 @@ var WError = require('verror').WError;
 
 // where uploads get saved
 var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
-var folder = process.env.S3_FOLDER ? process.env.S3_FOLDER : 'uploads/';
 var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-standard';
 
 module.exports = function () {
@@ -120,7 +119,7 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 	var res = ctx.res;
 	var params = req.query.id ? req.query : req.body;
 
-	folder = model + '-' + property + '/';
+	var folder = model + '-' + property + '/';
 
 	var versions = versionsByProperty[property] ? versionsByProperty[property] : [];
 
