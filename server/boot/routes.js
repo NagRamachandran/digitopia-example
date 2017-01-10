@@ -6,6 +6,9 @@ module.exports = function (server) {
 
   var AWSXRay = require('aws-xray-sdk');
 
+  AWSXRay.config([AWSXRay.plugins.EC2]);
+  AWSXRay.config([AWSXRay.plugins.ECS]);
+
   server.use(AWSXRay.express.openSegment());
 
   if (!process.env.SKIP_FRONTEND) {
