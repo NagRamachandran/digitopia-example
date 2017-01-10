@@ -20,13 +20,13 @@ To run the app:
 
 5. define localdev.env as described in see [keeping secrets](http://blog.digitopia.com/keeping-secrets/)
 
-To run app w/o facebook, twitter and s3 api features 
-NODE_ENV=localdev
-AUTOUPDATE=true
-SKIP_PASSPORT=true
-SKIP_UPLOAD=true
-SKIP_OG=true
-ADMIN=true
+	To run app w/o facebook, twitter and s3 api features use these values
+	NODE_ENV=localdev
+	AUTOUPDATE=true
+	SKIP_PASSPORT=true
+	SKIP_UPLOAD=true
+	SKIP_OG=true
+	ADMIN=true
 
 6. run `grunt`
 
