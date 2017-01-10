@@ -4,7 +4,7 @@ var ensureLoggedIn = require('../middleware/context-ensureLoggedIn');
 module.exports = function (server) {
   var router = server.loopback.Router();
 
-  if (!process.env.NO_FRONTEND) {
+  if (!process.env.SKIP_FRONTEND) {
     router.get('/', getCurrentUser(), function (req, res, next) {
       var ctx = req.myContext;
       var currentUser = ctx.get('currentUser');
