@@ -43,7 +43,8 @@
     "tmp": "*",
     "uuid": "*",
     "verror": "^1.6.1",
-    "webshot": "^0.18.0"
+    "webshot": "^0.18.0",
+    "aws-xray-sdk": "1.0.0-beta"
   },
   "devDependencies": {
     "grunt": "*",

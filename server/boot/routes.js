@@ -4,6 +4,10 @@ var ensureLoggedIn = require('../middleware/context-ensureLoggedIn');
 module.exports = function (server) {
   var router = server.loopback.Router();
 
+  var AWSXRay = require('aws-xray-sdk');
+
+  server.use(AWSXRay.express.openSegment());
+
   if (!process.env.SKIP_FRONTEND) {
     router.get('/', getCurrentUser(), function (req, res, next) {
       var ctx = req.myContext;
@@ -49,4 +53,6 @@ module.exports = function (server) {
   }
 
   server.use(router);
+
+  server.use(AWSXRay.express.closeSegment());
 };
