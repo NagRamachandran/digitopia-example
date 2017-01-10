@@ -69,6 +69,6 @@ module.exports = {
   },
   'OgTag': {
     'dataSource': 'db',
-    'public': process.env.ADMIN ? true : false
+    'public': true
   }
 };
