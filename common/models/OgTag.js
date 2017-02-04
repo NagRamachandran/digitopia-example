@@ -58,22 +58,27 @@ module.exports = function (OgTag) {
 						return cb(null, instance, og); // already have it
 					}
 					// need cookies for paywalled sites
-					request({
-							'method': 'HEAD',
-							'url': url,
-							'jar': request.jar()
-						})
-						.on('response', function (response) {
-							og.success = response.statusCode === 200 ? true : false;
-							og.httpStatusCode = response.statusCode;
-							og.data.contentType = response.headers['content-type'];
-							cb(null, instance, og);
-						})
-						.on('error', function (err) {
-							console.log(err);
-							var e = new VError(err, 'error getting head');
-							return cb(e);
-						});
+					try {
+						request({
+								'method': 'HEAD',
+								'url': url,
+								'jar': request.jar()
+							})
+							.on('response', function (response) {
+								og.success = response.statusCode === 200 ? true : false;
+								og.httpStatusCode = response.statusCode;
+								og.data.contentType = response.headers['content-type'];
+								return cb(null, instance, og);
+							})
+							.on('error', function (err) {
+								console.log(err);
+								var e = new VError(err, 'error getting head');
+								return cb(e);
+							});
+					}
+					catch (e) {
+						return cb(e);
+					}
 				},
 				// scrape the og tags from the url if needed
 				function getOgTags(instance, og, cb) {
