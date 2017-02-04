@@ -19,16 +19,6 @@ module.exports = function (OgTag) {
 				quality: 90,
 				maxHeight: 960,
 				maxWidth: 960,
-			}, {
-				suffix: 'medium',
-				quality: 90,
-				maxHeight: 480,
-				maxWidth: 480
-			}, {
-				suffix: 'small',
-				quality: 90,
-				maxHeight: 150,
-				maxWidth: 150
 			}]
 		};
 		uploadable(OgTag, 'OgTag', versions);
