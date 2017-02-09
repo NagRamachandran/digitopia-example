@@ -10,6 +10,8 @@ var request = require('request');
 
 module.exports = function (OgTag) {
 
+	var verbose = true;
+
 	// add the uploadable behavior to the OgTag model
 	// so we can store cached and resized images for the UI
 	OgTag.on('attached', function () {
@@ -38,6 +40,10 @@ module.exports = function (OgTag) {
 		async.waterfall([
 				// have we seen this page before?
 				function lookup(cb) {
+					if (verbose) {
+						console.log('OgTag.scrape lookup');
+					}
+
 					OgTag.findOne({
 						'where': {
 							'url': url
@@ -45,7 +51,7 @@ module.exports = function (OgTag) {
 						'include': ['uploads']
 					}, function (err, instance) {
 						if (err) {
-							return cb(new VError(err, 'error reading %s.%s', MyModelName, url));
+							return cb(new VError(err, 'error reading OGTag %s', url));
 						}
 						cb(err, instance, instance ? instance.ogData : {
 							data: {}
@@ -55,8 +61,14 @@ module.exports = function (OgTag) {
 				// determine the content-type of the url if not cached
 				function getContentType(instance, og, cb) {
 					if (instance) {
+						instance.ogData.cached = true;
 						return cb(null, instance, og); // already have it
 					}
+
+					if (verbose) {
+						console.log('OgTag.scrape getContentType');
+					}
+
 					// need cookies for paywalled sites
 					try {
 						request({
@@ -64,16 +76,16 @@ module.exports = function (OgTag) {
 								'url': url,
 								'jar': request.jar()
 							})
+							.on('error', function (err) {
+								console.log(err);
+								var e = new VError(err, 'error getting head');
+								return cb(e);
+							})
 							.on('response', function (response) {
 								og.success = response.statusCode === 200 ? true : false;
 								og.httpStatusCode = response.statusCode;
 								og.data.contentType = response.headers['content-type'];
 								return cb(null, instance, og);
-							})
-							.on('error', function (err) {
-								console.log(err);
-								var e = new VError(err, 'error getting head');
-								return cb(e);
 							});
 					}
 					catch (e) {
@@ -89,6 +101,10 @@ module.exports = function (OgTag) {
 
 					if (og && !og.success) {
 						return cb(null, instance, og); // link is probably bad
+					}
+
+					if (verbose) {
+						console.log('OgTag.scrape getOgTags');
 					}
 
 					var contentType = og.data.contentType;
@@ -133,6 +149,10 @@ module.exports = function (OgTag) {
 						return cb(null, instance, og); // already saved
 					}
 
+					if (verbose) {
+						console.log('OgTag.scrape getOgTags');
+					}
+
 					OgTag.create({
 						url: url,
 						ogData: og
@@ -152,6 +172,10 @@ module.exports = function (OgTag) {
 
 					if (og && !og.success) {
 						return cb(null, instance, og, null); // link is probably bad
+					}
+
+					if (verbose) {
+						console.log('OgTag.scrape screenshot');
 					}
 
 					tmp.tmpName(function (err, name) {
@@ -182,6 +206,10 @@ module.exports = function (OgTag) {
 						if (og.data.ogImage.url.match(/^\/\//)) {
 							return cb(null, instance);
 						}
+					}
+
+					if (verbose) {
+						console.log('OgTag.scrape upload');
 					}
 
 					// normally this is called via the api /api/modelname/id/upload
