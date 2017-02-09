@@ -254,7 +254,6 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 	}
 
 	function getInfo(localCopy, meta, cb) {
-		console.log(localCopy);
 		im.identify(['-strip', localCopy], function (err, features) {
 			if (err) {
 				cb(new VError(err, 'imagemagic identify failed'));
@@ -262,9 +261,9 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 			else {
 				features = features.replace(/\n$/, '');
 				var frames = features.split(/\n/);
-				console.log(frames);
+				//console.log(frames);
 				var attr = frames[0].split(/\s/);
-				console.log(attr);
+				//console.log(attr);
 				var dimensions = attr[2].split(/x/);
 				meta.width = dimensions[0];
 				meta.height = dimensions[1];
@@ -282,7 +281,7 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 
 		// if this is an animated gif don't resize - takes too long, just upload it
 		if (meta.isAnimatedGif) {
-			console.log('animated');
+			//console.log('animated');
 
 			var extension = mime.extension(meta.type);
 			var key = 'OgTag-image/' + uuid.v4() + '-animated.' + extension;
@@ -319,7 +318,6 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 				cb(new VError(err, 's3 (animated) upload failed'));
 			});
 			uploader.on('end', function () {
-				console.log('done uploading');
 				cb(null, instance, meta, images);
 			});
 		}
