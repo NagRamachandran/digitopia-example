@@ -37,6 +37,18 @@
       "type": "object"
     }
   },
+  "indexes": {
+    "Upload_uploadableId": {
+      "keys": {
+        "uploadableId": 1
+      }
+    },
+    "Upload_uploadableType": {
+      "keys": {
+        "uploadableType": 1
+      }
+    }
+  },
   "validations": [],
   "relations": {
     "owner": {

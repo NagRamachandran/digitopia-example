@@ -8,10 +8,18 @@
   "properties": {
     "url": {
       "type": "string",
-      "required": true
+      "required": true,
+      "length": 255
     },
     "ogData": {
       "type": "object"
+    }
+  },
+  "indexes": {
+    "OgTag_url": {
+      "keys": {
+        "url": 1
+      }
     }
   },
   "mixins": {

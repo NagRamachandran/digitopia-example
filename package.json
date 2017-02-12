@@ -25,7 +25,7 @@
     "loopback-boot": "^2.0.0",
     "loopback-component-explorer": "^4.0.0",
     "loopback-component-storage": "^3.0.0",
-    "loopback-connector-mysql": "^2.4.1",
+    "loopback-connector-mysql": "^3.0.0",
     "loopback-datasource-juggler": "^3.0.0",
     "loopback-ds-timestamp-mixin": "^3.0.0",
     "mime-types": "^2.1.10",

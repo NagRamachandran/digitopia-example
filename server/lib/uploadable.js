@@ -190,7 +190,6 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 					});
 			}
 			catch (e) {
-				console.log('this');
 				cb(e);
 			}
 		}
@@ -341,7 +340,7 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 				returnExif: true
 			};
 
-			console.log(options);
+			// console.log(options);
 
 			var client = new Uploader(bucket, options);
 

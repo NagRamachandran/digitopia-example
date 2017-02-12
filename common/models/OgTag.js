@@ -10,7 +10,7 @@ var request = require('request');
 
 module.exports = function (OgTag) {
 
-	var verbose = true;
+	var verbose = process.env.VERBOSE;
 
 	// add the uploadable behavior to the OgTag model
 	// so we can store cached and resized images for the UI
@@ -75,21 +75,28 @@ module.exports = function (OgTag) {
 								'method': 'HEAD',
 								'url': url,
 								'jar': request.jar()
-							})
-							.on('error', function (err) {
-								console.log(err);
-								var e = new VError(err, 'error getting head');
-								return cb(e);
-							})
-							.on('response', function (response) {
-								og.success = response.statusCode === 200 ? true : false;
-								og.httpStatusCode = response.statusCode;
-								og.data.contentType = response.headers['content-type'];
-								return cb(null, instance, og);
+							},
+							function (err, response, body) {
+								if (!err && response.statusCode === 200) {
+									og.success = response.statusCode === 200 ? true : false;
+									og.httpStatusCode = response.statusCode;
+									og.data.contentType = response.headers['content-type'];
+									return cb(null, instance, og);
+								}
+								else {
+									console.log(err);
+									og.success = false;
+									og.httpStatusCode = response ? response.statusCode : 404;
+									og.httpError = err && err.message ? err.message : err;
+									return cb(null, instance, og);
+								}
 							});
 					}
-					catch (e) {
-						return cb(e);
+					catch (err) {
+						og.success = false;
+						og.httpStatusCode = 404;
+						og.httpError = err.message ? err.message : err;
+						return cb(null, instance, og);
 					}
 				},
 				// scrape the og tags from the url if needed
