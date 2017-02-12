@@ -142,11 +142,10 @@ module.exports = function (OgTag) {
 					// call open-graph-scraper
 					ogs(options, function (err, og) {
 						if (err) {
-							var e = new VError('error getting og tags %s', og.err);
-							return cb(e);
+							return cb(null, instance, og);
 						}
 						og.data.contentType = contentType;
-						cb(err, instance, og);
+						cb(null, instance, og);
 					});
 				},
 				// save scraped og instance in cache if just scraped
@@ -157,7 +156,7 @@ module.exports = function (OgTag) {
 					}
 
 					if (verbose) {
-						console.log('OgTag.scrape getOgTags');
+						console.log('OgTag.scrape save');
 					}
 
 					OgTag.create({
@@ -173,7 +172,7 @@ module.exports = function (OgTag) {
 				// fall back to a screenshot if no image in og tags
 				function screenshot(instance, og, cb) {
 
-					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || _.has(og, 'data.ogImage')) { // cached, don't need to do anything
+					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || _.get(og, 'data.ogImage')) { // cached, don't need to do anything
 						return cb(null, instance, og, null); // don't need screenshot
 					}
 
@@ -205,14 +204,8 @@ module.exports = function (OgTag) {
 						return cb(null, instance); // link is probably bad
 					}
 
-					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || (!screenshot && !og.data.ogImage)) {
+					if ((instance && instance.uploads && instance.uploads() && instance.uploads().length) || (!screenshot && !_.get(og, 'data.ogImage.url'))) {
 						return cb(null, instance); // don't need to save image
-					}
-
-					if (_.has(og, 'data.ogImage.url')) {
-						if (og.data.ogImage.url.match(/^\/\//)) {
-							return cb(null, instance);
-						}
 					}
 
 					if (verbose) {
