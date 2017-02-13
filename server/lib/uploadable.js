@@ -253,7 +253,7 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 	}
 
 	function getInfo(localCopy, meta, cb) {
-		im.identify(['-strip', localCopy], function (err, features) {
+		im.identify(['-strip', '-quiet', localCopy], function (err, features) {
 			if (err) {
 				cb(new VError(err, 'imagemagic identify failed'));
 			}
