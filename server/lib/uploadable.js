@@ -344,16 +344,21 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 
 			var client = new Uploader(bucket, options);
 
-			client.upload(localCopy, {}, function (err, images, uploadmeta) {
-				if (err) {
-					console.log(err);
-					cb(new VError(err, 's3 upload failed'));
-				}
-				else {
-					// success - continue processing waterfall
-					cb(null, instance, meta, images);
-				}
-			});
+			try {
+				client.upload(localCopy, {}, function (err, images, uploadmeta) {
+					if (err) {
+						console.log(err);
+						cb(new VError(err, 's3 uploader failed'));
+					}
+					else {
+						// success - continue processing waterfall
+						cb(null, instance, meta, images);
+					}
+				});
+			}
+			catch (err) {
+				cb(new VError(err, 's3 uploader failed'));
+			}
 		}
 	}
 
