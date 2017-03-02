@@ -240,7 +240,7 @@ module.exports = function (OgTag) {
 			// done processing
 			function (err, instance) {
 				if (err) {
-					var e = new WError(err, 'OgTag scrape failed');
+					var e = new WError(err, 'OgTag scrape failed url:' + url);
 					console.log(e.toString());
 					return done(null, {});
 				}

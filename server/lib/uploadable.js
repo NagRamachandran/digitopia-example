@@ -163,7 +163,7 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 						cb(new VError(err, 'error loading %s', params.url));
 					})
 					.on('response', function (response) {
-						if (response.statusCode === 200 && response.headers['content-type'].match(/^image\//)) {
+						if (response.statusCode === 200 && response.headers['content-type'] && response.headers['content-type'].match(/^image\//)) {
 
 							// peek at the response to determine the content-type
 
@@ -185,7 +185,7 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 							theRequest.pipe(write);
 						}
 						else {
-							cb('could not open url ' + response.statusCode);
+							cb('could not open url:' + params.url + ' ' + ' content-type:' + response.headers['content-type'] + ' statusCode:' + response.statusCode);
 						}
 					});
 			}
