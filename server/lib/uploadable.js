@@ -136,7 +136,13 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 		saveNewUploadInstance
 	], function (err, results) {
 		if (err) {
-			var e = new WError(err, 'upload failed');
+			var e;
+			if(typeof err === 'string') {
+				e = new WError('upload failed ' + err);
+			}
+			else {
+				e = new WError(err, 'upload failed');
+			}
 			console.log(e.toString());
 			return next(e);
 		}

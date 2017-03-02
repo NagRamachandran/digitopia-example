@@ -36,6 +36,9 @@ module.exports = function (OgTag) {
 	//   Save resized image in s3 if needed
 
 	OgTag.scrape = function (url, ctx, done) {
+		if (verbose) {
+			console.log('OgTag.scrape url:' + url + ' start');
+		}
 		// we have several async tasks to perform so run it through waterfall
 		async.waterfall([
 				// have we seen this page before?
@@ -84,7 +87,7 @@ module.exports = function (OgTag) {
 									return cb(null, instance, og);
 								}
 								else {
-									console.log(err);
+									console.log('OgTag.scrape getContentType:',err, response ? response.statusCode : ' response empty');
 									og.success = false;
 									og.httpStatusCode = response ? response.statusCode : 404;
 									og.httpError = err && err.message ? err.message : err;
@@ -140,13 +143,18 @@ module.exports = function (OgTag) {
 					};
 
 					// call open-graph-scraper
-					ogs(options, function (err, og) {
-						if (err) {
-							return cb(null, instance, og);
-						}
-						og.data.contentType = contentType;
-						cb(null, instance, og);
-					});
+					try {
+						ogs(options, function (err, og) {
+							if (err) {
+								return cb(null, instance, og);
+							}
+							og.data.contentType = contentType;
+							cb(null, instance, og);
+						});
+					}
+					catch (e) {
+						return cb(null, instance, og);
+					}
 				},
 				// save scraped og instance in cache if just scraped
 				function save(instance, og, cb) {
@@ -222,19 +230,24 @@ module.exports = function (OgTag) {
 						'url': _.has(og, 'data.ogImage.url') ? og.data.ogImage.url : null
 					};
 
-					OgTag.upload(instance.id, 'image', ctx, function (err, upload) {
-						if (err) {
-							return cb(new VError(err, 'could not save image', err));
-						}
-
-						// include the upload instance on the ogTag instance
-						OgTag.include([instance], 'uploads', function (err, instances) {
+					try {
+						OgTag.upload(instance.id, 'image', ctx, function (err, upload) {
 							if (err) {
-								return cb(new VError(err, 'could not include uploads', err));
+								return cb(new VError(err, 'could not save image'));
 							}
-							cb(null, instances[0]);
+
+							// include the upload instance on the ogTag instance
+							OgTag.include([instance], 'uploads', function (err, instances) {
+								if (err) {
+									return cb(new VError(err, 'could not include uploads'));
+								}
+								cb(null, instances[0]);
+							});
 						});
-					});
+					}
+					catch (e) {
+						return cb(new VError(e, 'upload failed'));
+					}
 				}
 			],
 			// done processing
