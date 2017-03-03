@@ -135,10 +135,10 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 		if (err) {
 			var e;
 			if (typeof (err) === 'string') {
-				e = new WError('upload failed ',err);
+				e = new WError('upload failed ', err);
 			}
 			else {
-				e = new WError(err, 'upload failed',err);
+				e = new WError(err, 'upload failed', err);
 			}
 			console.log(e.toString());
 			return next(e);
@@ -160,8 +160,15 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 			meta.filename = params.url;
 
 			try {
+				var options = {
+					url: params.url,
+					'jar': request.jar(),
+					'headers': {
+						'user-agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
+					}
+				};
 				var theRequest = request
-					.get(params.url)
+					.get(options)
 					.on('error', function (err) {
 						cb(new VError(err, 'error loading %s', params.url));
 					})
@@ -192,6 +199,7 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 							e.url = params.url;
 							e.contentType = response ? response.headers['content-type'] : 'unknown';
 							e.statusCode = response ? response.statusCode : 'unknown';
+							console.log(e);
 							cb(e);
 						}
 					});

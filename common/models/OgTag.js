@@ -84,6 +84,8 @@ module.exports = function (OgTag) {
 
 				if (instance && refresh) {
 					instance.ogData = og;
+					instance.success = undefined;
+					instance.httpStatusCode = undefined;
 				}
 
 				cb(err, instance, instance ? instance.ogData : og);
