@@ -55,7 +55,6 @@ module.exports = function () {
 
 		// upload a file and store metadata in an Upload instance for MyModel
 		MyModel.upload = function (id, property, ctx, cb) {
-			var reqContext = ctx.req.getCurrentContext();
 
 			// process the upload
 			MyModel.findById(ctx.args.id, function (err, instance) {
@@ -117,8 +116,6 @@ module.exports = function () {
 // versions: array specifying the resize specs for the upload fileSet
 
 function uploadable(model, instance, property, ctx, versionsByProperty, next) {
-	var reqContext = ctx.req.getCurrentContext();
-	var currentUser = reqContext.get('currentUser');
 	var req = ctx.req;
 	var res = ctx.res;
 	var params = req.query.id ? req.query : req.body;
@@ -137,11 +134,11 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 	], function (err, results) {
 		if (err) {
 			var e;
-			if(typeof err === 'string') {
-				e = new WError('upload failed ' + err);
+			if (typeof (err) === 'string') {
+				e = new WError('upload failed ',err);
 			}
 			else {
-				e = new WError(err, 'upload failed');
+				e = new WError(err, 'upload failed',err);
 			}
 			console.log(e.toString());
 			return next(e);
@@ -191,7 +188,11 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 							theRequest.pipe(write);
 						}
 						else {
-							cb('could not open url:' + params.url + ' ' + ' content-type:' + response.headers['content-type'] + ' statusCode:' + response.statusCode);
+							var e = new Error('error downloading original copy');
+							e.url = params.url;
+							e.contentType = response ? response.headers['content-type'] : 'unknown';
+							e.statusCode = response ? response.statusCode : 'unknown';
+							cb(e);
 						}
 					});
 			}
