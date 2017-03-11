@@ -30,3 +30,5 @@ docker-ebs notes
 dockercfg.json
 
 notes.txt
+
+Dockerrun.aws.json

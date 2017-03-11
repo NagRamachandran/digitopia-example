@@ -9,12 +9,16 @@ var mime = require('mime-types');
 var Uploader = require('s3-uploader');
 var VError = require('verror').VError;
 var WError = require('verror').WError;
+var im = require('imagemagick');
+var s3 = require('s3');
 
 // where uploads get saved
 var bucket = process.env.S3_BUCKET ? process.env.S3_BUCKET : 'site-uploads';
 var region = process.env.S3_REGION ? process.env.S3_REGION : 'us-standard';
 
 module.exports = function () {
+
+	var verbose = true;
 
 	return function uploadableFactory(MyModel, myModelName, versionsByProperty) {
 
@@ -51,7 +55,6 @@ module.exports = function () {
 
 		// upload a file and store metadata in an Upload instance for MyModel
 		MyModel.upload = function (id, property, ctx, cb) {
-			var reqContext = ctx.req.getCurrentContext();
 
 			// process the upload
 			MyModel.findById(ctx.args.id, function (err, instance) {
@@ -113,8 +116,6 @@ module.exports = function () {
 // versions: array specifying the resize specs for the upload fileSet
 
 function uploadable(model, instance, property, ctx, versionsByProperty, next) {
-	var reqContext = ctx.req.getCurrentContext();
-	var currentUser = reqContext.get('currentUser');
 	var req = ctx.req;
 	var res = ctx.res;
 	var params = req.query.id ? req.query : req.body;
@@ -126,12 +127,19 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 	// steps for processing the request
 	async.waterfall([
 		getLocalCopy,
+		getInfo,
 		uploadFile,
 		cleanupOldUploadInstance,
 		saveNewUploadInstance
 	], function (err, results) {
 		if (err) {
-			var e = new WError(err, 'upload failed');
+			var e;
+			if (typeof (err) === 'string') {
+				e = new WError('upload failed ', err);
+			}
+			else {
+				e = new WError(err, 'upload failed', err);
+			}
 			console.log(e.toString());
 			return next(e);
 		}
@@ -151,37 +159,54 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 		if (params.url) {
 			meta.filename = params.url;
 
-			var theRequest = request
-				.get(params.url)
-				.on('error', function (err) {
-					cb(new VError(err, 'error loading %s', params.url));
-				})
-				.on('response', function (response) {
-					if (response.statusCode === 200 && response.headers['content-type'].match(/^image\//)) {
-
-						// peek at the response to determine the content-type
-
-						meta.type = response.headers['content-type'];
-						var extension = mime.extension(meta.type);
-						localCopy = '/tmp/' + uuid.v4() + '.' + extension;
-
-						// create a write stream to save the file
-						var write = fs.createWriteStream(localCopy)
-							.on('error', function (err) {
-								cb(new VError(err, 'error saving %s', localCopy));
-							})
-							.on('finish', function () {
-								// success - continue processing waterfall
-								cb(null, localCopy, meta);
-							});
-
-						// pipe the request into the file
-						theRequest.pipe(write);
+			try {
+				var options = {
+					url: params.url,
+					'jar': request.jar(),
+					'headers': {
+						'user-agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
 					}
-					else {
-						cb('could not open url ' + response.statusCode);
-					}
-				});
+				};
+				var theRequest = request
+					.get(options)
+					.on('error', function (err) {
+						cb(new VError(err, 'error loading %s', params.url));
+					})
+					.on('response', function (response) {
+						if (response.statusCode === 200 && response.headers['content-type'] && response.headers['content-type'].match(/^image\//)) {
+
+							// peek at the response to determine the content-type
+
+							meta.type = response.headers['content-type'];
+							var extension = mime.extension(meta.type);
+							localCopy = '/tmp/' + uuid.v4() + '.' + extension;
+
+							// create a write stream to save the file
+							var write = fs.createWriteStream(localCopy)
+								.on('error', function (err) {
+									cb(new VError(err, 'error saving %s', localCopy));
+								})
+								.on('finish', function () {
+									// success - continue processing waterfall
+									cb(null, localCopy, meta);
+								});
+
+							// pipe the request into the file
+							theRequest.pipe(write);
+						}
+						else {
+							var e = new Error('error downloading original copy');
+							e.url = params.url;
+							e.contentType = response ? response.headers['content-type'] : 'unknown';
+							e.statusCode = response ? response.statusCode : 'unknown';
+							console.log(e);
+							cb(e);
+						}
+					});
+			}
+			catch (e) {
+				cb(e);
+			}
 		}
 		else if (params.localCopy) {
 			cb(null, params.localCopy, meta);
@@ -242,36 +267,114 @@ function uploadable(model, instance, property, ctx, versionsByProperty, next) {
 		}
 	}
 
+	function getInfo(localCopy, meta, cb) {
+		im.identify(['-strip', '-quiet', localCopy], function (err, features) {
+			if (err) {
+				cb(new VError(err, 'imagemagic identify failed'));
+			}
+			else {
+				features = features.replace(/\n$/, '');
+				var frames = features.split(/\n/);
+				//console.log(frames);
+				var attr = frames[0].split(/\s/);
+				//console.log(attr);
+				var dimensions = attr[2].split(/x/);
+				meta.width = dimensions[0];
+				meta.height = dimensions[1];
+				if (frames.length > 1) {
+					meta.isAnimatedGif = true;
+				}
+				cb(null, localCopy, meta);
+			}
+		});
+	}
+
 	// upload the original file to s3
 	// and based on the spec in versions upload as many resized versions as needed
 	function uploadFile(localCopy, meta, cb) {
-		var client = new Uploader(bucket, {
-			aws: {
-				region: region,
-				path: folder,
-				acl: 'public-read',
-				accessKeyId: process.env.AWS_S3_KEY_ID,
-				secretAccessKey: process.env.AWS_S3_KEY
-			},
-			cleanup: {
-				original: true,
-				versions: true
-			},
-			original: {
-				acl: 'public-read'
-			},
-			versions: versions
-		});
 
-		client.upload(localCopy, {}, function (err, images, uploadmeta) {
-			if (err) {
-				cb(new VError(err, 's3 upload failed'));
-			}
-			else {
-				// success - continue processing waterfall
+		// if this is an animated gif don't resize - takes too long, just upload it
+		if (meta.isAnimatedGif) {
+			//console.log('animated');
+
+			var extension = mime.extension(meta.type);
+			var key = 'OgTag-image/' + uuid.v4() + '-animated.' + extension;
+
+			var images = [];
+			images.push({
+				original: true,
+				width: meta.width,
+				height: meta.height,
+				key: key,
+				url: 'https://s3.amazonaws.com/dl-og/' + key
+			});
+
+			var client = s3.createClient({
+				s3Options: {
+					accessKeyId: process.env.AWS_S3_KEY_ID,
+					secretAccessKey: process.env.AWS_S3_KEY,
+				},
+			});
+
+			var params = {
+				localFile: localCopy,
+				ContentType: meta.type,
+				s3Params: {
+					Bucket: 'dl-og',
+					Key: key,
+					ACL: 'public-read'
+				},
+			};
+
+			var uploader = client.uploadFile(params);
+			uploader.on('error', function (err) {
+				console.error('unable to upload:', err.stack);
+				cb(new VError(err, 's3 (animated) upload failed'));
+			});
+			uploader.on('end', function () {
 				cb(null, instance, meta, images);
+			});
+		}
+		else {
+			var options = {
+				aws: {
+					region: region,
+					path: folder,
+					acl: 'public-read',
+					accessKeyId: process.env.AWS_S3_KEY_ID,
+					secretAccessKey: process.env.AWS_S3_KEY
+				},
+				cleanup: {
+					original: true,
+					versions: true
+				},
+				original: {
+					acl: 'public-read'
+				},
+				versions: versions,
+				returnExif: true
+			};
+
+			// console.log(options);
+
+			var client = new Uploader(bucket, options);
+
+			try {
+				client.upload(localCopy, {}, function (err, images, uploadmeta) {
+					if (err) {
+						console.log(err);
+						cb(new VError(err, 's3 uploader failed'));
+					}
+					else {
+						// success - continue processing waterfall
+						cb(null, instance, meta, images);
+					}
+				});
 			}
-		});
+			catch (err) {
+				cb(new VError(err, 's3 uploader failed'));
+			}
+		}
 	}
 
 	// cleanup old Upload instance before saving new one
