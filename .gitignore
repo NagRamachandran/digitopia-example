@@ -26,6 +26,7 @@ localdev.env
 !.elasticbeanstalk/*.global.yml
 
 docker-ebs notes
+Dockerrun.aws.json
 
 dockercfg.json
 
