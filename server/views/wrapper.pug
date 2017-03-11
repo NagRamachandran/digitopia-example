@@ -28,7 +28,11 @@ html(lang="en")
 			.row
 				.col-xs-12
 					.page-header
-						h3 Digitopia example code testbench <small><a href="http://blog.digitopia.com">http://blog.digitopia.com</a></small>
+						h3
+							| Digitopia example code testbench<br>
+							small
+								a(href= '/') < Home
+								|  | More about the framework: <a href="http://blog.digitopia.com">http://blog.digitopia.com</a>
 
 			#content(data-hijax="true")
 				block content

@@ -4,11 +4,17 @@
 		var self = this;
 
 		self.url = this.element.data('url');
+		self.debug = this.element.data('debug');
 
 		this.start = function () {
 			// once digitopiaAjax has loaded the data from the endpoint, build the ui
 			this.element.on('data', function (e, data) {
 				self.data = data.result;
+
+				if(self.debug) {
+					$(self.debug).empty().text(JSON.stringify(data, null, 4)).show();
+				}
+
 				var src = getUploadForProperty('image', data.result.uploads, 'large', true).url;
 				var img = $('<img data-jsclass="digitopiaLazyImg" data-lazy-src="' + src + '">');
 				var caption = $('<div class="caption">');

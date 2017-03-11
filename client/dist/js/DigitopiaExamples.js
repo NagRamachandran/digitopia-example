@@ -22450,11 +22450,17 @@ function getUploadForProperty(prop, uploads, type, fpo) {
 		var self = this;
 
 		self.url = this.element.data('url');
+		self.debug = this.element.data('debug');
 
 		this.start = function () {
 			// once digitopiaAjax has loaded the data from the endpoint, build the ui
 			this.element.on('data', function (e, data) {
 				self.data = data.result;
+
+				if(self.debug) {
+					$(self.debug).empty().text(JSON.stringify(data, null, 4)).show();
+				}
+
 				var src = getUploadForProperty('image', data.result.uploads, 'large', true).url;
 				var img = $('<img data-jsclass="digitopiaLazyImg" data-lazy-src="' + src + '">');
 				var caption = $('<div class="caption">');
@@ -22523,4 +22529,36 @@ function getUploadForProperty(prop, uploads, type, fpo) {
 		};
 	}
 	$.fn.OgTagPreview = GetJQueryPlugin('OgTagPreview', OgTagPreview);
+})(jQuery);
+;(function($) {
+	function previewUrl(elem) {
+		this.element = $(elem);
+		var self = this;
+
+		this.target = this.element.data('target');
+		this.debug = this.element.data('debug');
+
+		this.lastval = undefined;
+
+		this.start = function() {
+			this.element.on('focusout',function() {
+				if(self.lastval !== self.element.val()) {
+					self.preview(self.element.val());
+					self.lastval = self.element.val();
+				}
+			});
+		};
+
+		this.stop = function() {
+			this.element.off('focusout');
+		};
+
+		this.preview = function(url) {
+			var buffer = '<div class="ogPreview last-instantiate" data-jsclass="OgTagPreview" data-src="/api/OgTags/scrape" data-url="' + url + '" data-type="json" data-debug="'+self.debug+'">';
+			$(self.target).empty().append(buffer);
+			didInjectContent('#url-preview');
+		};
+	}
+
+	$.fn.previewUrl = GetJQueryPlugin('previewUrl',previewUrl);
 })(jQuery);

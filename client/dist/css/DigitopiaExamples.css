@@ -10423,9 +10423,6 @@ button.close {
   }
 }
 
-body {
-  background-color: #eee;
-}
 .is-logged-in .hidden-logged-in {
   display: none !important;
 }
@@ -10467,6 +10464,12 @@ body {
   opacity: 1;
   -ms-filter: none;
   filter: none;
+}
+#scope-pages-og #preview-json-here {
+  display: none;
+}
+#scope-pages-og #preview-og {
+  margin-top: 50px;
 }
 #ajax-status {
   position: fixed;
