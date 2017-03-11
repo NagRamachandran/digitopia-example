@@ -5,8 +5,11 @@ block seo
 		Upload
 
 block content
-	h3.
-		Upload Photo
+	h3
+		a(href= '/') < Home
+
+		| &nbsp;|&nbsp; Upload Photo
+
 
 	- var photo = getUploadForProperty('photo',user.uploads(),null,true)
 	- var large = getUploadForProperty('photo',user.uploads(),'large',true)

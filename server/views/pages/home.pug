@@ -38,10 +38,6 @@ block content
 						p
 							a(href="/auth/twitter" data-no-hijax="true") Link w/ Twitter Account
 
-				if !SKIP_UPLOAD
-					p
-						a.btn.btn-primary(href="/upload") Upload a file
-
 				p
 					button.btn.btn-default(data-jsclass="logoutController").
 							Log Out
@@ -66,8 +62,15 @@ block content
 
 	.row(style="padding-top:50px;")
 		.col-xs-12
-			p= 'ip: ' + ip
+			if !SKIP_UPLOAD && user
+				p
+					a.btn.btn-primary(href="/upload") Upload a file
 
-	if !SKIP_OG
-		p
-			a(href="/ogtags") OG Tag Example
+			if !SKIP_OG
+				p
+					a.btn.btn-primary(href="/ogtags") OG Tag Example
+
+
+	.row(style="padding-top:50px;")
+		.col-xs-12
+			p= 'ip: ' + ip
