@@ -7,6 +7,9 @@
 		self.debug = this.element.data('debug');
 
 		this.start = function () {
+			if(self.debug) {
+				$(self.debug).empty().text('Loading...').show();
+			}
 			// once digitopiaAjax has loaded the data from the endpoint, build the ui
 			this.element.on('data', function (e, data) {
 				self.data = data.result;

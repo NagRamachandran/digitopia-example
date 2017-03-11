@@ -9,12 +9,16 @@ block content
 		.row
 			.col-xs-12
 				.page-header
-					H1 OG Scraper
+					H1
+						| OG Scraper
+						small
+							|  |
+							a(href="http://blog.digitopia.com/ui-building-og-open-graph-previews/") Docs & Blog
 
 				.row
 					.form
 						.col-xs-10
-							input.form-control.col-xs-10(data-jsclass="previewUrl" data-target="#preview-here" data-debug="#preview-json-here" placeholder="Enter a url")
+							input.form-control.col-xs-10(data-jsclass="previewUrl" data-target="#preview-here" data-debug="#preview-json-here" placeholder="Enter a url to scrape for OG data")
 						.col-xs-2
 							button.btn.btn-default Scrape OG
 
