@@ -1,8 +1,8 @@
 # install packages
-FROM ubuntu
+FROM debian
 RUN apt-get update
 RUN apt-get install -y supervisor
-RUN apt-get install -y nginx
+RUN apt-get install -y nginx-extras
 
 RUN mkdir -p /var/log/nginx/healthd; chown www-data.adm /var/log/nginx/healthd
 
@@ -11,6 +11,8 @@ ADD docker-assets/nginx/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # set up nginx
 ADD docker-assets/nginx/nginx.conf /etc/nginx/conf.d/container.conf
+
+ADD docker-assets/nginx/purge-multi.lua /usr/local/purge-multi.lua
 
 ADD client /var/app/current/client
 
